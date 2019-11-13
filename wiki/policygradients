@@ -1,0 +1,11 @@
+Policy Gradients
+
+Anwendungsfall:
+    - Zustände, die für Agenten gleich aussehen, haben zufälligen Ausgang
+
+Aktionen:
+    - Diskret: Lernen von Aktionspräferenzen H_a, Aktionsauswahl mit Softmax mit Input H_a
+    - Kontinuierlich: Lernen von Mittelwert einer Normalverteilung, Standardabweiung ist Hyperparameter
+    
+
+
