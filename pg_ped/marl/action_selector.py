@@ -182,6 +182,16 @@ class ActionSelectorScenarioTorchQtd(ActionSelectorPG):
                        self._optimizer_value, *experience_batch, agent_identity, **kwargs)
 
 
+class ActionSelectorRaw(ActionSelectorScenarioTorchQtd):
+
+    def __call__(self, state, agent_identity: int, forbidden_actions: List[int], mode: str, **kwargs) -> Tensor:
+        current_episode = kwargs['current_episode']
+        kinematics = generate_state(state)
+        action, log_prob, prob, failed = self._select_action(kinematics.unsqueeze(0), self._policy, forbidden_actions,
+                                                             current_episode, mode, None, None, None)
+        return action, log_prob, prob, failed
+
+
 class ActionSelectorScenarioTorch(ActionSelectorScenarioTorchQtd):
 
     def __call__(self, state: List[Tensor], agent_identity: int, forbidden_actions: List[int],

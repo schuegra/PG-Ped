@@ -14,6 +14,9 @@ from pg_ped.utils import standardize_tensor, normalize_tensor, standardize_tenso
 from pg_ped.visualization.visualize_cnn import vis_feature_maps, vis_fc, vis_fov
 
 
+
+
+
 class PolicyNetRecurrent(nn.Module):
 
     def __init__(self, input_size: int,
@@ -897,7 +900,7 @@ class FlexibleMLPDiscreteActions(torch.nn.Module):
         self._n_agents = int((input_size - 6 * 2) / 3)
 
     def forward(self, x):
-        x = self.normalize_kinematics(x)
+        #x = self.normalize_kinematics(x)
         for linear in self.fcs:
             x = self.activation(linear(x))
             x = self.dropout1d(x)

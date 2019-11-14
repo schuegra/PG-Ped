@@ -500,8 +500,6 @@ def render_rectangular_fov_torch(state: Tensor,
         # plt.imshow(scenario_array.cpu().numpy());
         # plt.show()
 
-        pass
-
         # Fill into extended scenario
         extended_scenario_array[:, row_radius:ext_scen_size_row - row_radius,
         col_radius:ext_scen_size_col - col_radius] = scenario_array.permute(2, 0, 1)
@@ -1380,3 +1378,11 @@ def generate_kinematics_torch2(state: Tensor,
 
     break_if_nan(kinematics)
     return kinematics.unsqueeze(0)
+
+
+def generate_state(state: Tensor):
+
+    state_representation = state[0].flatten()
+    state_representation = normalize_tensor(state_representation)
+
+    return state_representation

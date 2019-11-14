@@ -124,11 +124,16 @@ def accumulated_density(start: Tensor, goal: Tensor,
     return accumulated_density #/ts.shape[0]
 
 
-def set_initial_states_vadere(initial_states):
+def set_initial_state_vadere(initial_states, i):
     ids = traci.person_vadere.getIDList()
-    for id in ids:
-        index = int(id) - 1
-        pos = initial_states[0][index, :2].cpu().numpy()
+    runner_id = ids[-1]
+    runner_pos = initial_states[i][0, :2].cpu().numpy()
+    x = runner_pos[0]
+    y = runner_pos[1]
+    traci.person_vadere.setPosition(runner_id, x, y)
+    for id in ids[:-1]:
+        index = int(id)
+        pos = initial_states[i][index, :2].cpu().numpy()
         x = pos[0]
         y = pos[1]
         traci.person_vadere.setPosition(id, x, y)
