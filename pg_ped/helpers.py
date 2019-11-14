@@ -78,3 +78,7 @@ def post_process(states: List[numpy.ndarray], episode_lengths: List[int], dt: fl
         os.mkdir(save_path)
     save_trajectories(runs, episode_lengths, dt, save_path)
 
+def readScenario(scenPath):
+    with open(scenPath, 'r') as scenFile:
+        scenario = scenFile.read()
+    return scenario

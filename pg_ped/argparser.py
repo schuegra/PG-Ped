@@ -15,8 +15,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='Name of the models.\nWhen saving or loading, an id is appended to this name for each agent.')
     parser.add_argument('-trajectorypath', type=str, default='trajectories', help='Where simulated trajectories are stored and loaded from.')
     parser.add_argument('-geometry', nargs=10, type=float,
+                        default=[1., 4., 6., 3., 7., 7., 4.5, 8., 0.2, 0.25],
                         #default=[-3., 0., 1.55, 0., 2.0, 1.7, 0.775, 2., 0.15, 0.18],
-                        default=[-1., 0., 1.55, 0., 2.0, 1.7, 0.775, 2., 0.10, 0.15],
+                        #default=[-1., 0., 1.55, 0., 2.0, 1.7, 0.775, 2., 0.10, 0.15],
                         help='Experiment geometry: start_line xmin xmax ymin ymax goalline(y-coordinate) runner_goal_x runner_goal_y pedestrian_radius soft_pedestrian_radius')
     parser.add_argument('-steplengths', type=float, nargs=2, default=[1., 0.1],
                         help='Distance that runner or waiting move to their goals, if they can.')
@@ -39,7 +40,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     #parser.add_argument('-algorithmints', nargs=10, type=int, default=[10000, 4, 3, 50000, 200, 1000000, 32, 32, 4, 10000],
     parser.add_argument('-algorithmints', nargs=10, type=int,
                         #default=[15000, 4, 3, 151, 150, 300000, 128, 32, 4, 10000],
-                        default=[100000, 4, 3, 301, 300, 300000, 128, 32, 4, 10000],
+                        default=[1, 4, 3, 301, 300, 300000, 128, 32, 4, 10000],
                         help='Int hyperparameters to the learning algorithm: nr_episodes, state_variables_per_agent_per_timestep, \
                         number_timesteps_per_state, memorization_capacity_of_agent, maximum_number_of_steps, eps_decay_length, \
                         numberofsamples, batchsize, optimization_frequency, start_learning')
@@ -51,6 +52,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='How often to print training progress to the console.')
     parser.add_argument('-mlp', nargs=3, default=[1, [128], 'tanh'],
                         help='Multi layer perceptron with: n_hiddens n_neurons activation')
+    parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Downloads/scenarios/')
+    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='denseCrowd.scenario')
     return parser
 
 

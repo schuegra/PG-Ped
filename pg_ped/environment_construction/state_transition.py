@@ -5,10 +5,59 @@ import numpy
 import torch
 from torch import Tensor
 
+import pyTraci as traci
+
 from pg_ped.environment_construction.geometry import *
 from pg_ped.utils import break_if_nan
 
 EPS = numpy.finfo(dtype=numpy.float).eps
+
+
+def choose_target(state: Tensor,
+                  agent_identity: int,
+                  action: Tensor,
+                  person_radius: float,
+                  soft_person_radius: float,
+                  time_per_step: float,
+                  variables_per_agent_per_timestep: int,
+                  backward_view: int,
+                  x_min: float,
+                  x_max: float,
+                  y_min: float,
+                  y_max: float,
+                  goal_line: float,
+                  step_length_runner: float,
+                  runner_identities: List[int],
+                  push_dist: float,
+                  maximum_speed_forward: float,
+                  maximum_speed_backward: float,
+                  start_line: float,
+                  **kwargs) -> Tensor:
+    '''
+    '''
+
+    new_state = state.clone()
+    try:
+        del state
+
+        person_id = str(agent_identity + 1)
+        target = str(action[0].cpu().numpy() + 2)
+        traci.person_vadere.setTargetList(person_id, [target])
+        traci.simulationStep(time_per_step)
+        positions = traci.person_vadere.getPositionListAscendingIds()
+
+        new_state = update_state_all_positions(new_state, positions, variables_per_agent_per_timestep, backward_view,
+                                               **kwargs)
+
+    except Exception as e:
+        print('ERROR MESAGE: ', e)
+        # failed = True
+
+    # for i in range(new_state.shape[0]):
+    #     if check_out_of_bounds(new_state, i, x_min, x_max, y_min, y_max):
+    #         print('BOUNDARY COLLISION')
+
+    return new_state, False
 
 
 def push_move_heuristic(state: Tensor,

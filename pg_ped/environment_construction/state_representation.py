@@ -500,6 +500,8 @@ def render_rectangular_fov_torch(state: Tensor,
         # plt.imshow(scenario_array.cpu().numpy());
         # plt.show()
 
+        pass
+
         # Fill into extended scenario
         extended_scenario_array[:, row_radius:ext_scen_size_row - row_radius,
         col_radius:ext_scen_size_col - col_radius] = scenario_array.permute(2, 0, 1)
