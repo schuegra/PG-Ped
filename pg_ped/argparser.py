@@ -15,7 +15,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='Name of the models.\nWhen saving or loading, an id is appended to this name for each agent.')
     parser.add_argument('-trajectorypath', type=str, default='trajectories', help='Where simulated trajectories are stored and loaded from.')
     parser.add_argument('-geometry', nargs=10, type=float,
-                        default=[1., 4., 6., 3., 7., 7., 4.5, 8., 0.2, 0.25],
+                        default=[1., 0.5, 1.5, 0.5, 9.5, 8., 1.5, 9.1, 0.2, 0.25],
+                        #default=[1., 4., 6., 3., 7., 7., 4.5, 8., 0.2, 0.25],
                         #default=[-3., 0., 1.55, 0., 2.0, 1.7, 0.775, 2., 0.15, 0.18],
                         #default=[-1., 0., 1.55, 0., 2.0, 1.7, 0.775, 2., 0.10, 0.15],
                         help='Experiment geometry: start_line xmin xmax ymin ymax goalline(y-coordinate) runner_goal_x runner_goal_y pedestrian_radius soft_pedestrian_radius')
@@ -52,8 +53,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='How often to print training progress to the console.')
     parser.add_argument('-mlp', nargs=3, default=[1, [128], 'tanh'],
                         help='Multi layer perceptron with: n_hiddens n_neurons activation')
-    parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Downloads/scenarios/')
-    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='denseCrowd.scenario')
+
+    parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/Demos/ReinforcementLearning/scenarios')
+    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='DenseCrowd.scenario')
+    # parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/ModelTests/TestPsychology/CognitionAndBehavior/scenarios')
+    # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='01-ExperimentSetup-OSMEventDriven-SBDisabled.scenario')
+
     return parser
 
 

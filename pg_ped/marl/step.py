@@ -6,16 +6,14 @@ Created on Sun Mar 17 09:13:20 2019
 """
 
 import os
-
-import torch
-
 from typing import List
-
 from copy import deepcopy
 
+import torch
 from random import shuffle
 import numpy
 
+import pytraci as traci
 from pg_ped.marl.agent import Agent
 from . import Environment
 from pg_ped.environment_construction.state_representation import generate_kinematics_torch, generate_kinematics_torch2
@@ -351,6 +349,27 @@ class MultiAgentStepSequentialEpisodic(MultiAgentStepBase):
             transitions = sas._agent._replay_memory._memory[-sas.number_steps:]
             reward_sum = sum([x.reward for x in transitions])
             reward_sums[i] += [reward_sum]
+
+
+class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
+
+    def __call__(self, **kwargs):
+        one_is_done = False
+        failed = False
+        for step in self._single_agent_steps:
+            state, done, failed_step = step(**kwargs)
+            failed = failed or failed_step
+            if done is True:
+                one_is_done = True
+        traci.simulationStep(kwargs['time_per_step'])
+
+        if (self._training is True) and (one_is_done is True) and (failed is False):
+            self.optimize(**kwargs)
+
+        if (one_is_done is True) and (self._training is False):
+            self.track_rewards(**kwargs)
+
+        return state, one_is_done, failed
 
 
 class MultiAgentStepSequentialEpisodicNStepTD(MultiAgentStepSequentialEpisodic):

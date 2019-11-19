@@ -5,7 +5,7 @@ import numpy
 import torch
 from torch import Tensor
 
-import pyTraci as traci
+import pytraci as traci
 
 from pg_ped.environment_construction.geometry import *
 from pg_ped.utils import break_if_nan
@@ -36,18 +36,16 @@ def choose_target(state: Tensor,
     '''
     '''
 
-    new_state = state.clone()
     try:
+        new_state = state.clone()
         del state
+        positions = traci.person_vadere.getPositionListAscendingIds()
+        new_state = update_state_all_positions(new_state, positions, variables_per_agent_per_timestep, backward_view,
+                                               **kwargs)
 
         person_id = str(agent_identity + 1)
         target = str(action[0].cpu().numpy() + 2)
         traci.person_vadere.setTargetList(person_id, [target])
-        traci.simulationStep(time_per_step)
-        positions = traci.person_vadere.getPositionListAscendingIds()
-
-        new_state = update_state_all_positions(new_state, positions, variables_per_agent_per_timestep, backward_view,
-                                               **kwargs)
 
     except Exception as e:
         print('ERROR MESAGE: ', e)

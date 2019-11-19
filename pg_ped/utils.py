@@ -9,7 +9,7 @@ import math
 import numpy
 from scipy.spatial import distance_matrix as scipy_distance_matrix
 
-import pyTraci as traci
+import pytraci as traci
 
 import torch
 from torch import Tensor
@@ -125,6 +125,7 @@ def accumulated_density(start: Tensor, goal: Tensor,
 
 
 def set_initial_state_vadere(initial_states, i):
+
     ids = traci.person_vadere.getIDList()
     runner_id = ids[-1]
     runner_pos = initial_states[i][0, :2].cpu().numpy()
