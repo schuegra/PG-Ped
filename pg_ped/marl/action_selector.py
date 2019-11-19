@@ -186,7 +186,7 @@ class ActionSelectorRaw(ActionSelectorScenarioTorchQtd):
 
     def __call__(self, state, agent_identity: int, forbidden_actions: List[int], mode: str, **kwargs) -> Tensor:
         current_episode = kwargs['current_episode']
-        kinematics = generate_state(state)
+        kinematics = generate_state(state, agent_identity, **kwargs)
         action, log_prob, prob, failed = self._select_action(kinematics.unsqueeze(0), self._policy, forbidden_actions,
                                                              current_episode, mode, None, None, None)
         return action, log_prob, prob, failed

@@ -1380,9 +1380,18 @@ def generate_kinematics_torch2(state: Tensor,
     return kinematics.unsqueeze(0)
 
 
-def generate_state(state: Tensor):
+def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
 
-    state_representation = state[0].flatten()
-    state_representation = normalize_tensor(state_representation)
+    positions = state[0][:, :2]
+    pos = positions[agent_identity]
+    velocities = state[0][:, 2:4]
+
+    n_agents = positions.shape[0]
+    state_representation = torch.zeros([4 * positions.shape[0]], device=device)
+    for i in range(n_agents):
+        state_representation[i * 4 + 0] = positions[i, 0]
+        state_representation[i * 4 + 1] = positions[i, 1]
+        state_representation[i * 4 + 2] = velocities[i, 0]
+        state_representation[i * 4 + 3] = velocities[i, 1]
 
     return state_representation

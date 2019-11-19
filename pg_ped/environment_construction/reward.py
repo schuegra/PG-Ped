@@ -315,14 +315,14 @@ def reward3(state: Tensor,
         else:
             scalar_reward -= 1.  # 0.
 
-        # Wall collision
-        if check_boundary_collision(state, agent_identity, person_radius=person_radius,
-                                    y_min=start_line, y_max=y_max + 10., **kwargs) is True:
-            scalar_reward -= 10.
-
-        # Agent collision
-        if check_agent_collision(state, agent_identity, soft_person_radius, EPS)[0] is True:
-            scalar_reward -= 5.
+        # # Wall collision
+        # if check_boundary_collision(state, agent_identity, person_radius=person_radius,
+        #                             y_min=start_line, y_max=y_max + 10., **kwargs) is True:
+        #     scalar_reward -= 10.
+        #
+        # # Agent collision
+        # if check_agent_collision(state, agent_identity, soft_person_radius, EPS)[0] is True:
+        #     scalar_reward -= 5.
 
     else:
 
@@ -336,13 +336,13 @@ def reward3(state: Tensor,
                                     person_radius=person_radius, **kwargs) is True:
             scalar_reward -= 8.
 
-        # Goal: second last position
-        goal = state[agent_identity, 2 * 4: 2 * 4 + 2]
-        distance_goal = torch.norm(state[agent_identity, :2] - goal)
-        distance_goal = distance_goal.cpu().numpy()
-        T = 0.3
-        n = truncnorm(-T, T)
-        scalar_reward += n.pdf(distance_goal)
+        # # Goal: second last position
+        # goal = state[agent_identity, 2 * 4: 2 * 4 + 2]
+        # distance_goal = torch.norm(state[agent_identity, :2] - goal)
+        # distance_goal = distance_goal.cpu().numpy()
+        # T = 0.3
+        # n = truncnorm(-T, T)
+        # scalar_reward += n.pdf(distance_goal)
 
         # Agent collision
         if check_agent_collision(state, agent_identity, soft_person_radius, EPS)[0] is True:

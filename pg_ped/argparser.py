@@ -27,7 +27,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('-maximumspeed', type=float, nargs=2, default=[-0.3, 1.8],
                         help='Maximum speed of the pedestrians forward and backward.')
     parser.add_argument('-numberagents', type=int, default=1, help='Number of agents')
-    parser.add_argument('-dt', type=float, default=0.5, help='Time interval per decision')
+    parser.add_argument('-dt', type=float, default=10., help='Time interval per decision')
     parser.add_argument('-densitymap', nargs=2, type=float, default=[5., .1],
                         help='Density parameters: influence_radius(cut off parameter) standard_deviation')
     parser.add_argument('-heatmap', nargs=2, type=int, default=[45, 15], help='Heatmap parameters: rows columns')
@@ -41,7 +41,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     #parser.add_argument('-algorithmints', nargs=10, type=int, default=[10000, 4, 3, 50000, 200, 1000000, 32, 32, 4, 10000],
     parser.add_argument('-algorithmints', nargs=10, type=int,
                         #default=[15000, 4, 3, 151, 150, 300000, 128, 32, 4, 10000],
-                        default=[1, 4, 3, 301, 300, 300000, 128, 32, 4, 10000],
+                        default=[1000, 4, 3, 301, 150, 300000, 128, 32, 4, 10000],
                         help='Int hyperparameters to the learning algorithm: nr_episodes, state_variables_per_agent_per_timestep, \
                         number_timesteps_per_state, memorization_capacity_of_agent, maximum_number_of_steps, eps_decay_length, \
                         numberofsamples, batchsize, optimization_frequency, start_learning')
