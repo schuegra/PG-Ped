@@ -39,13 +39,17 @@ def choose_target(state: Tensor,
     try:
         new_state = state.clone()
         del state
-        positions = traci.person_vadere.getPositionListAscendingIds()
+        positions_in_order_of_vadere = traci.person_vadere.getPositionListAscendingIds()
+        position_runner = [positions_in_order_of_vadere[-1]]
+        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
+        positions = position_runner + positions_other
         new_state = update_state_all_positions(new_state, positions, variables_per_agent_per_timestep, backward_view,
                                                **kwargs)
 
-        person_id = str(agent_identity + 1)
-        target = str(action[0].cpu().numpy() + 2)
-        traci.person_vadere.setTargetList(person_id, [target])
+        if agent_identity > 0:
+            person_id = str(agent_identity)
+            target = str(action[0].cpu().numpy() + 2)
+            traci.person_vadere.setTargetList(person_id, [target for i in range(100)])
 
     except Exception as e:
         print('ERROR MESAGE: ', e)

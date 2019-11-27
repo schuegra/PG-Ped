@@ -1385,10 +1385,15 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     positions = state[0][:, :2]
     pos = positions[agent_identity]
     velocities = state[0][:, 2:4]
+    vel = velocities[agent_identity]
 
     n_agents = positions.shape[0]
     state_representation = torch.zeros([4 * positions.shape[0]], device=device)
-    for i in range(n_agents):
+    state_representation[0] = pos[0]
+    state_representation[1] = pos[1]
+    state_representation[2] = vel[0]
+    state_representation[3] = vel[1]
+    for i in range(1, n_agents):
         state_representation[i * 4 + 0] = positions[i, 0]
         state_representation[i * 4 + 1] = positions[i, 1]
         state_representation[i * 4 + 2] = velocities[i, 0]
