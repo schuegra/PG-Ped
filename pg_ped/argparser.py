@@ -55,7 +55,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='Multi layer perceptron with: n_hiddens n_neurons activation')
 
     parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/Demos/ReinforcementLearning/scenarios')
-    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd.scenario')
+    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_largeTargets.scenario')
     # parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/ModelTests/TestPsychology/CognitionAndBehavior/scenarios')
     # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='01-ExperimentSetup-OSMEventDriven-SBDisabled.scenario')
 

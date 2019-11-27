@@ -351,6 +351,55 @@ def reward3(state: Tensor,
     return scalar_reward
 
 
+def reward4(state: Tensor,
+            agent_identity: int,
+            influence_radius: float,
+            standard_deviation: float,
+            goal_line: float,
+            person_radius: float,
+            soft_person_radius: float,
+            runner_identities: List[int],
+            device: str,
+            initial_state: Tensor,
+            variables_per_agent_per_timestep: int,
+            backward_view: int,
+            start_line: float,
+            y_min: float,
+            y_max: float,
+            **kwargs) -> Tensor:
+    """
+        Reward function.
+
+        Parameters:
+        -----------
+
+        state: Tensor
+            A tensor of 2D cartesian coordinates.
+
+    """
+
+    scalar_reward = 0
+
+    p = state[agent_identity, :2]
+    p_old = state[agent_identity, 4:6]
+
+    if agent_identity in runner_identities:
+        scalar_reward += 0. # does not learn
+    else:
+        # Goal reward
+        if agent_in_goal(state,
+                         agent_identity=runner_identities[0],
+                         goal_line=goal_line,
+                         runner_identities=runner_identities,
+                         person_radius=person_radius) is True:
+            scalar_reward += 100.
+        else:
+            scalar_reward -= 1.  # 0.
+
+
+    return scalar_reward
+
+
 def reward_simplified(state: Tensor,
                       agent_identity: int,
                       influence_radius: float,
