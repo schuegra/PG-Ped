@@ -9,7 +9,7 @@ import math
 import numpy
 from scipy.spatial import distance_matrix as scipy_distance_matrix
 
-import pytraci as traci
+import config
 
 import torch
 from torch import Tensor
@@ -126,18 +126,18 @@ def accumulated_density(start: Tensor, goal: Tensor,
 
 def set_state_vadere(state):
 
-    ids = traci.person_vadere.getIDList()
+    ids = config.cli.pers.getIDList()
     runner_id = ids[-1]
     runner_pos = state[0, :2].cpu().numpy()
     x = runner_pos[0]
     y = runner_pos[1]
-    traci.person_vadere.setPosition(runner_id, x, y)
+    config.cli.pers.setPosition2D(runner_id, x, y)
     for id in ids[:-1]:
         index = int(id)
         pos = state[index, :2].cpu().numpy()
         x = pos[0]
         y = pos[1]
-        traci.person_vadere.setPosition(id, x, y)
+        config.cli.pers.setPosition(id, x, y)
 
 def get_initial_states_random_on_grid(number_trials: int,
                                       initial_state_runners: List,

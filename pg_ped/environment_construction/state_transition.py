@@ -5,8 +5,7 @@ import numpy
 import torch
 from torch import Tensor
 
-import pytraci as traci
-
+import config
 from pg_ped.environment_construction.geometry import *
 from pg_ped.utils import break_if_nan
 
@@ -39,7 +38,8 @@ def choose_target(state: Tensor,
     try:
         new_state = state.clone()
         del state
-        positions_in_order_of_vadere = traci.person_vadere.getPositionListAscendingIds()
+        #positions_in_order_of_vadere = traci.person_vadere.getPositionListAscendingIds()
+        positions_in_order_of_vadere = config.cli.pers.getPosition2DList()
         position_runner = [positions_in_order_of_vadere[-1]]
         positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
         positions = position_runner + positions_other
