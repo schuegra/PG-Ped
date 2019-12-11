@@ -5,7 +5,7 @@ import numpy
 import torch
 from torch import Tensor
 
-import config
+from pg_ped import config
 from pg_ped.environment_construction.geometry import *
 from pg_ped.utils import break_if_nan
 
@@ -39,7 +39,8 @@ def choose_target(state: Tensor,
         new_state = state.clone()
         del state
         #positions_in_order_of_vadere = traci.person_vadere.getPositionListAscendingIds()
-        positions_in_order_of_vadere = config.cli.pers.getPosition2DList()
+        positions_dict = config.cli.pers.getPosition2DList()
+        positions_in_order_of_vadere = list(positions_dict.values())
         position_runner = [positions_in_order_of_vadere[-1]]
         positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
         positions = position_runner + positions_other
@@ -49,10 +50,10 @@ def choose_target(state: Tensor,
         if agent_identity > 0:
             person_id = str(agent_identity)
             target = str(action[0].cpu().numpy() + 2)
-            traci.person_vadere.setTargetList(person_id, [target for i in range(100)])
+            config.cli.pers.setTargetList(person_id, [target for i in range(100)])
 
     except Exception as e:
-        print('ERROR MESAGE: ', e)
+        print('ERROR MESAGE in state_transition/choose_target: ', e)
         # failed = True
 
     # for i in range(new_state.shape[0]):

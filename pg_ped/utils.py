@@ -9,12 +9,12 @@ import math
 import numpy
 from scipy.spatial import distance_matrix as scipy_distance_matrix
 
-import config
-
 import torch
 from torch import Tensor
 import torch.nn as nn
 from torch.autograd import Variable
+
+from pg_ped import config
 
 
 def standardize_tensor_nn(tensor: Tensor) -> Tensor:
@@ -137,7 +137,7 @@ def set_state_vadere(state):
         pos = state[index, :2].cpu().numpy()
         x = pos[0]
         y = pos[1]
-        config.cli.pers.setPosition(id, x, y)
+        config.cli.pers.setPosition2D(id, x, y)
 
 def get_initial_states_random_on_grid(number_trials: int,
                                       initial_state_runners: List,

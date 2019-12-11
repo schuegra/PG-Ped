@@ -13,7 +13,7 @@ import torch
 from random import shuffle
 import numpy
 
-import pytraci as traci
+from pg_ped import config
 from pg_ped.marl.agent import Agent
 from . import Environment
 from pg_ped.environment_construction.state_representation import generate_kinematics_torch, generate_kinematics_torch2
@@ -361,15 +361,13 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             failed = failed or failed_step
             if done is True:
                 one_is_done = True
-        traci.simulationStep(kwargs['time_per_step'])
+        config.cli.ctr.nextStep(kwargs['time_per_step'])
 
         if (self._training is True) and (one_is_done is True) and (failed is False):
             self.optimize(**kwargs)
 
         if (one_is_done is True) and (self._training is False):
             self.track_rewards(**kwargs)
-
-
 
         return state, one_is_done, failed
 
