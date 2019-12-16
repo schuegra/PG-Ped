@@ -1,15 +1,13 @@
 from typing import List, Callable, Tuple
 
-import numpy
-from scipy.ndimage import gaussian_filter
-
 import matplotlib.pyplot as plt
+import numpy
+import torch
 from matplotlib import animation
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Circle
-
+from scipy.ndimage import gaussian_filter
 from torch import Tensor
-import torch
 
 
 def init_axes(ax, x_min, x_max, y_min, y_max, goal_line,

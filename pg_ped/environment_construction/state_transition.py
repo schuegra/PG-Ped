@@ -49,8 +49,17 @@ def choose_target(state: Tensor,
 
         if agent_identity > 0:
             person_id = str(agent_identity)
-            target = str(action[0].cpu().numpy() + 2)
-            config.cli.pers.setTargetList(person_id, [target for i in range(100)])
+            poly_ids = config.cli.poly.getIDList()
+            target_ids = []
+            for id in poly_ids:
+                targetType = config.cli.poly.getType(id)
+                if targetType == "TARGET":
+                    target_ids += [id]
+            target_ids = [x for x in target_ids if x != "6"] # "6" is assumed to be the target of the runner
+            target_index = action[0].cpu().numpy()
+            target_id = str(target_ids[target_index])
+            config.cli.pers.setNextTargetListIndex(person_id, 0)
+            config.cli.pers.setTargetList(person_id, [target_id])
 
     except Exception as e:
         print('ERROR MESAGE in state_transition/choose_target: ', e)

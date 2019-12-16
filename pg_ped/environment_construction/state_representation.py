@@ -1,7 +1,9 @@
 import torch
 from torch import Tensor
 
+from pg_ped import config
 from pg_ped.marl.utils import *
+from pg_ped.environment_construction.geometry import angle_2D_full
 
 
 def render_localization_map(state: Tensor, agent_identity: int,
@@ -1382,13 +1384,36 @@ def generate_kinematics_torch2(state: Tensor,
 
 def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
 
+    pos = state[0][agent_identity, :2]
+    pos_cpu = pos.cpu().numpy()
+    pos_cpu = (float(pos_cpu[0]), float(pos_cpu[0]))
+
+    # Agent features
     positions = state[0][:, :2]
     pos = positions[agent_identity]
     velocities = state[0][:, 2:4]
     vel = velocities[agent_identity]
-
     n_agents = positions.shape[0]
-    state_representation = torch.zeros([4 * positions.shape[0]], device=device)
+
+    # Target features
+    idList = config.cli.poly.getIDList()
+    targetIds = []
+    targetDists = []
+    targetDirs = []
+    n_targets = 0
+    pos_x_axis = torch.tensor([1., 0.], device=device)
+    for x in idList:
+        elementType = config.cli.poly.getType(x)
+        if elementType == "TARGET":
+            n_targets += 1
+            targetDists += [config.cli.poly.getDistance(x, pos_cpu[0], pos_cpu[1])]
+            targetCentroid = config.cli.poly.getCentroid(x)
+            targetDirVec = (pos_cpu[0] - targetCentroid[0], pos_cpu[1] - targetCentroid[1])
+            targetDirVec = torch.tensor(targetDirVec, device=device)
+            targetDirs += [angle_2D_full(pos_x_axis, targetDirVec)]
+
+    state_representation = torch.zeros([4 * positions.shape[0] + 2 * n_targets], device=device)
+
     state_representation[0] = pos[0]
     state_representation[1] = pos[1]
     state_representation[2] = vel[0]
@@ -1398,5 +1423,8 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
         state_representation[i * 4 + 1] = positions[i, 1]
         state_representation[i * 4 + 2] = velocities[i, 0]
         state_representation[i * 4 + 3] = velocities[i, 1]
+    for i in range(n_targets):
+        state_representation[n_agents * 4 + i * 2 + 0] = torch.tensor(targetDists[i], device=device)
+        state_representation[n_agents * 4 + i * 2 + 1] = targetDirs[i]
 
     return state_representation

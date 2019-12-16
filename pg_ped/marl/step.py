@@ -361,7 +361,9 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             failed = failed or failed_step
             if done is True:
                 one_is_done = True
-        config.cli.ctr.nextStep(kwargs['time_per_step'])
+
+        if one_is_done is False:
+            config.cli.ctr.nextStep(kwargs['time_per_step'])
 
         if (self._training is True) and (one_is_done is True) and (failed is False):
             self.optimize(**kwargs)
