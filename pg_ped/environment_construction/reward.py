@@ -386,7 +386,12 @@ def reward4(state: Tensor,
     if agent_identity in runner_identities:
         scalar_reward += 0. # does not learn
     else:
-        # Goal reward
+        # targetPoint = torch.tensor([0.5, 8.0], device=device)
+        # dist = torch.norm(targetPoint - p).cpu().numpy()
+        # if dist < 0.8:
+        #     scalar_reward += 10.
+        #scalar_reward -= dist
+        # # Goal reward
         if agent_in_goal(state,
                          agent_identity=runner_identities[0],
                          goal_line=goal_line,
@@ -395,6 +400,7 @@ def reward4(state: Tensor,
             scalar_reward += 100.
         else:
             scalar_reward -= 1.  # 0.
+
 
 
     return scalar_reward
