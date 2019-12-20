@@ -45,18 +45,20 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
                         help='Int hyperparameters to the learning algorithm: nr_episodes, state_variables_per_agent_per_timestep, \
                         number_timesteps_per_state, memorization_capacity_of_agent, maximum_number_of_steps, eps_decay_length, \
                         numberofsamples, batchsize, optimization_frequency, start_learning')
-    parser.add_argument('-simulationruns', type=int, default=10,
+    parser.add_argument('-simulationruns', type=int, default=2,
                         help='Number of simulation runs which will also be animated.')
     parser.add_argument('-randomseed', type=int, default=0,
                         help='Random seed for reproducebility.')
     parser.add_argument('-optimizermessagefrequency', type=int, default=5,
                         help='How often to print training progress to the console.')
-    parser.add_argument('-mlp', nargs=3, default=[1, [128], 'tanh'],
+    # parser.add_argument('-mlp', nargs=3, default=[1, [128], 'tanh'],
+    #                     help='Multi layer perceptron with: n_hiddens n_neurons activation')
+    parser.add_argument('-mlp', nargs=3, default=[3, [128, 128, 128], 'relu'],
                         help='Multi layer perceptron with: n_hiddens n_neurons activation')
 
     parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/Demos/ReinforcementLearning/scenarios')
-    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_3_waiting')
-    # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets')
+    # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_3_waiting')
+    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets')
     # parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/ModelTests/TestPsychology/CognitionAndBehavior/scenarios')
     # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='01-ExperimentSetup-OSMEventDriven-SBDisabled.scenario')
 

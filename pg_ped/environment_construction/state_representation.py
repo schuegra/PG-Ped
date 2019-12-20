@@ -1382,7 +1382,8 @@ def generate_kinematics_torch2(state: Tensor,
     return kinematics.unsqueeze(0)
 
 
-def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
+def generate_state(state: Tensor, agent_identity: int, device: str,
+                   x_min, x_max, y_min, y_max, **kwargs):
 
     pos = state[0][agent_identity, :2]
     pos_cpu = pos.cpu().numpy()
@@ -1390,7 +1391,8 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
 
     # Agent features
     positions = state[0][:, :2]
-    pos = positions[agent_identity]
+    positions[:, 0] -= x_min
+    positions[:, 0] /= x_max - x_min
     velocities = state[0][:, 2:4]
     vel = velocities[agent_identity]
     n_agents = positions.shape[0]
