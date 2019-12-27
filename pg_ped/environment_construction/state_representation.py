@@ -1399,7 +1399,6 @@ def generate_state(state: Tensor, agent_identity: int, device: str,
 
     # Target features
     idList = config.cli.poly.getIDList()
-    targetIds = []
     targetDists = []
     targetDirs = []
     n_targets = 0
