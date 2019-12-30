@@ -60,6 +60,9 @@ def choose_target(state: Tensor,
             target_id = str(target_ids[target_index])
             config.cli.pers.setNextTargetListIndex(person_id, 0)
             config.cli.pers.setTargetList(person_id, [target_id])
+        elif agent_identity == 0:
+            person_id = max(config.cli.pers.getIDList())
+            config.cli.pers.setNextTargetListIndex(person_id, 0)
 
     except Exception as e:
         print('ERROR MESAGE in state_transition/choose_target: ', e)
