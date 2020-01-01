@@ -6,17 +6,18 @@ Created on Sun Mar 17 09:13:20 2019
 """
 
 import os
-from typing import List
 from copy import deepcopy
-
-import torch
 from random import shuffle
-import numpy
+from typing import List
 
+import numpy
+import torch
 from pg_ped import config
-from pg_ped.marl.agent import Agent
-from . import Environment
+from pg_ped.environment_construction.geometry import update_state_all_positions
 from pg_ped.environment_construction.state_representation import generate_kinematics_torch, generate_kinematics_torch2
+from pg_ped.marl.agent import Agent
+
+from . import Environment
 
 
 class SingleAgentStep(object):
@@ -71,7 +72,7 @@ class SingleAgentStep(object):
                 prob.clone(),
                 next_state.detach().cpu().numpy(),
                 reward,
-                None, # state value
+                None,  # state value
                 None  # next state value
             )
             self._steps += 1
@@ -362,7 +363,6 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             if done is True:
                 one_is_done = True
 
-        #config.cli.sim.get
         if one_is_done is False:
             config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
 

@@ -1,3 +1,5 @@
+from math import pi
+
 import torch
 from torch import Tensor
 
@@ -1385,16 +1387,25 @@ def generate_kinematics_torch2(state: Tensor,
 def generate_state(state: Tensor, agent_identity: int, device: str,
                    x_min, x_max, y_min, y_max, **kwargs):
 
-    pos = state[0][agent_identity, :2]
+    # Agent features
+    positions = state[0][:, :2].clone()
+    positions[:, 0] -= 0.5
+    positions[:, 0] /= (2.5 - 0.5)
+    positions[:, 1] -= 0.5
+    positions[:, 1] /= (9.5 - 0.5)
+
+    max_vel_x = max_vel_y = 1.5
+    min_vel_x = min_vel_y = -1.5
+    velocities = state[0][:, 2:4].clone()
+    velocities[:, 0] -= min_vel_x
+    velocities[:, 0] /= (max_vel_x - min_vel_x)
+    velocities[:, 1] -= min_vel_y
+    velocities[:, 1] /= (max_vel_y - min_vel_y)
+
+    vel = velocities[agent_identity]
+    pos = positions[agent_identity]
     pos_cpu = pos.cpu().numpy()
     pos_cpu = (float(pos_cpu[0]), float(pos_cpu[0]))
-
-    # Agent features
-    positions = state[0][:, :2]
-    positions[:, 0] -= x_min
-    positions[:, 0] /= x_max - x_min
-    velocities = state[0][:, 2:4]
-    vel = velocities[agent_identity]
     n_agents = positions.shape[0]
 
     # Target features
@@ -1412,8 +1423,14 @@ def generate_state(state: Tensor, agent_identity: int, device: str,
             targetDirVec = (pos_cpu[0] - targetCentroid[0], pos_cpu[1] - targetCentroid[1])
             targetDirVec = torch.tensor(targetDirVec, device=device)
             targetDirs += [angle_2D_full(pos_x_axis, targetDirVec)]
+    targetDists = torch.tensor(targetDists, device=device)
+    targetDists -= targetDists.min()
+    targetDists /= (targetDists.max() - targetDists.min())
+    targetDirs = torch.tensor(targetDirs, device=device)
+    targetDirs = targetDirs / (2 * pi)
 
     state_representation = torch.zeros([4 * positions.shape[0] + 2 * n_targets], device=device)
+    #state_representation = torch.zeros([4 * positions.shape[0]], device=device)
 
     state_representation[0] = pos[0]
     state_representation[1] = pos[1]
@@ -1425,7 +1442,7 @@ def generate_state(state: Tensor, agent_identity: int, device: str,
         state_representation[i * 4 + 2] = velocities[i, 0]
         state_representation[i * 4 + 3] = velocities[i, 1]
     for i in range(n_targets):
-        state_representation[n_agents * 4 + i * 2 + 0] = torch.tensor(targetDists[i], device=device)
+        state_representation[n_agents * 4 + i * 2 + 0] = targetDists[i]
         state_representation[n_agents * 4 + i * 2 + 1] = targetDirs[i]
 
     return state_representation

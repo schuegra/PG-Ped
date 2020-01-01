@@ -27,7 +27,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('-maximumspeed', type=float, nargs=2, default=[-0.3, 1.8],
                         help='Maximum speed of the pedestrians forward and backward.')
     parser.add_argument('-numberagents', type=int, default=1, help='Number of agents')
-    parser.add_argument('-dt', type=float, default=1.5, help='Time interval per decision')
+    parser.add_argument('-dt', type=float, default=0.5, help='Time interval per decision')
     parser.add_argument('-densitymap', nargs=2, type=float, default=[5., .1],
                         help='Density parameters: influence_radius(cut off parameter) standard_deviation')
     parser.add_argument('-heatmap', nargs=2, type=int, default=[45, 15], help='Heatmap parameters: rows columns')
@@ -35,7 +35,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument('-localwindow', nargs=2, type=int, default=[35, 35])
     #parser.add_argument('-localwindow', nargs=2, type=int, default=[35, 35])
     #parser.add_argument('-localwindow', nargs=2, type=int, default=[51, 51]) # both have to be odd
-    parser.add_argument('-algorithmfloats', nargs=8, type=float, default=[0.99, 1e-4, 1e-3, 1e-0, 1e-0, 0.3, 0.001, 0.0],
+    parser.add_argument('-algorithmfloats', nargs=8, type=float, default=[0.99, 1e-4, 1e-2, 1e-0, 1e-0, 0.3, 0.001, 0.0],
                         help='Float hyperparameters to the learning algorithm: gamma, lr_runner_policy, lr_waiting_policy, \
                         lr_runner_value, lr_waiting_value, eps_start, eps_end, dropout_probability')
     #parser.add_argument('-algorithmints', nargs=10, type=int, default=[10000, 4, 3, 50000, 200, 1000000, 32, 32, 4, 10000],
@@ -58,10 +58,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
     parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/Demos/ReinforcementLearning/scenarios')
     # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_1_waiting')
-    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_3_waiting')
+    # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_3_waiting')
+    # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets_6_waiting')
     # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002', default='DenseCrowd_withoutGroups_moreTargets')
     # parser.add_argument('-scenPath', type=str, help='Path to the scenario', default='/Users/Philipp/Repos/vadere/Scenarios/ModelTests/TestPsychology/CognitionAndBehavior/scenarios')
     # parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='01-ExperimentSetup-OSMEventDriven-SBDisabled.scenario')
+    parser.add_argument('-scenFName', type=str, help='Filename of the scenario. E.g. scenario002.scenario', default='NarrowCorridor_3_targets_2_waiting')
+
 
     return parser
 

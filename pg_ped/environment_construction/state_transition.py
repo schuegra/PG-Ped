@@ -7,6 +7,7 @@ from torch import Tensor
 
 from pg_ped import config
 from pg_ped.environment_construction.geometry import *
+
 from pg_ped.utils import break_if_nan
 
 EPS = numpy.finfo(dtype=numpy.float).eps
@@ -36,18 +37,9 @@ def choose_target(state: Tensor,
     '''
 
     try:
-        new_state = state.clone()
-        del state
-        #positions_in_order_of_vadere = traci.person_vadere.getPositionListAscendingIds()
-        positions_dict = config.cli.pers.getPosition2DList()
-        positions_in_order_of_vadere = list(positions_dict.values())
-        position_runner = [positions_in_order_of_vadere[-1]]
-        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
-        positions = position_runner + positions_other
-        new_state = update_state_all_positions(new_state, positions, variables_per_agent_per_timestep, backward_view,
-                                               **kwargs)
-
+        # Set target
         if agent_identity > 0:
+
             person_id = str(agent_identity)
             poly_ids = config.cli.poly.getIDList()
             target_ids = []
@@ -60,9 +52,20 @@ def choose_target(state: Tensor,
             target_id = str(target_ids[target_index])
             config.cli.pers.setNextTargetListIndex(person_id, 0)
             config.cli.pers.setTargetList(person_id, [target_id])
+
         elif agent_identity == 0:
             person_id = max(config.cli.pers.getIDList())
             config.cli.pers.setNextTargetListIndex(person_id, 0)
+
+        # Update position
+        new_state = state.clone()
+        positions_dict = config.cli.pers.getPosition2DList()
+        positions_in_order_of_vadere = list(positions_dict.values())
+        position_runner = [positions_in_order_of_vadere[-1]]
+        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
+        positions = position_runner + positions_other
+        new_state = update_state_agent(new_state, agent_identity, positions[agent_identity], variables_per_agent_per_timestep, backward_view, **kwargs)
+
 
     except Exception as e:
         print('ERROR MESAGE in state_transition/choose_target: ', e)

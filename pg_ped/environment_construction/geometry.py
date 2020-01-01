@@ -884,6 +884,23 @@ def update_state_without_collision_check(state: Tensor,
 
     return new_state
 
+def update_state_agent(state: Tensor,
+                       agent_identity: int,
+                       new_position: List[Tuple[float, float]],
+                       variables_per_agent_per_timestep: int,
+                       backward_view: int,
+                       **kwargs):
+    new_state = state.clone()
+    x1, y1 = new_position
+    new_state[agent_identity, variables_per_agent_per_timestep:variables_per_agent_per_timestep * backward_view] = \
+        state[agent_identity, :variables_per_agent_per_timestep * (backward_view - 1)]
+    new_state[agent_identity, 0] = x1
+    new_state[agent_identity, 1] = y1
+    new_state[agent_identity, 2] = x1 - state[agent_identity, 0]
+    new_state[agent_identity, 3] = y1 - state[agent_identity, 1]
+
+    return new_state
+
 
 def update_state_all_positions(state: Tensor,
                                new_positions: List[Tuple[float, float]],
