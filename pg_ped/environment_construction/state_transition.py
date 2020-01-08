@@ -57,16 +57,6 @@ def choose_target(state: Tensor,
             person_id = max(config.cli.pers.getIDList())
             config.cli.pers.setNextTargetListIndex(person_id, 0)
 
-        # Update position
-        new_state = state.clone()
-        positions_dict = config.cli.pers.getPosition2DList()
-        positions_in_order_of_vadere = list(positions_dict.values())
-        position_runner = [positions_in_order_of_vadere[-1]]
-        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
-        positions = position_runner + positions_other
-        new_state = update_state_agent(new_state, agent_identity, positions[agent_identity], variables_per_agent_per_timestep, backward_view, **kwargs)
-
-
     except Exception as e:
         print('ERROR MESAGE in state_transition/choose_target: ', e)
         # failed = True
@@ -75,7 +65,7 @@ def choose_target(state: Tensor,
     #     if check_out_of_bounds(new_state, i, x_min, x_max, y_min, y_max):
     #         print('BOUNDARY COLLISION')
 
-    return new_state, False
+    return state, False
 
 
 def push_move_heuristic(state: Tensor,

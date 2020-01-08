@@ -1,20 +1,18 @@
 from typing import List, Callable
 
 import numpy
-
 import torch
 import torch.nn as nn
-from torch import Tensor
-from torch.autograd import Variable
-from torch.distributions.multivariate_normal import MultivariateNormal
-
-from pg_ped.utils import normalize_tensor, prepare, standardize_tensor
+from pg_ped.agent_construction.action_selector import continous_action_selection_normal
 from pg_ped.environment_construction.state_representation import (render_vision_field_torch,
                                                                   generate_kinematics_torch,
                                                                   generate_kinematics_torch2)
-from pg_ped.visualization.visualize_cnn import vis_feature_maps
 from pg_ped.environment_construction.termination import runners_in_goal
-from pg_ped.agent_construction.action_selector import continous_action_selection_normal
+from pg_ped.utils import normalize_tensor, prepare, standardize_tensor
+from pg_ped.visualization.visualize_cnn import vis_feature_maps
+from torch import Tensor
+from torch.autograd import Variable
+from torch.distributions.multivariate_normal import MultivariateNormal
 
 try:
     from pg_ped.visualization.graph_visualization import make_dot
@@ -955,9 +953,11 @@ def optimize_DDPG(net: nn.Module,
                   person_radius: float,
                   **kwargs) -> None:
     states_on_device = torch.cat(
-        transform_states_to_kinematics(states, agent_identity, device, runner_identities, goal_line, person_radius, **kwargs))
+        transform_states_to_kinematics(states, agent_identity, device, runner_identities, goal_line, person_radius,
+                                       **kwargs))
     next_states_on_device = torch.cat(
-        transform_states_to_kinematics(next_states, agent_identity, device, runner_identities, goal_line, person_radius, **kwargs))
+        transform_states_to_kinematics(next_states, agent_identity, device, runner_identities, goal_line, person_radius,
+                                       **kwargs))
 
     eye = torch.eye(2, device=device).unsqueeze(0)
     number_steps = int(states_on_device.shape[0] / batch_size + 1)

@@ -901,9 +901,10 @@ class FlexibleMLPDiscreteActions(torch.nn.Module):
 
     def forward(self, x):
         #x = self.normalize_kinematics(x)
-        for linear in self.fcs:
+        for linear in self.fcs[:-1]:
             x = self.activation(linear(x))
             x = self.dropout1d(x)
+        x = self.fcs[-1](x)
         out = self.softmax(x)
         return out
 

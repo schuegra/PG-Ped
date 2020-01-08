@@ -1,14 +1,12 @@
 import pdb
 import os
 import gc
-
 from typing import Tuple, List
 
 import math
-
 import numpy
+from numpy.random import randint
 from scipy.spatial import distance_matrix as scipy_distance_matrix
-
 import torch
 from torch import Tensor
 import torch.nn as nn
@@ -138,6 +136,25 @@ def set_state_vadere(state):
         x = pos[0]
         y = pos[1]
         config.cli.pers.setPosition2D(id, x, y)
+
+def set_random_targets():
+
+    persIDList = config.cli.pers.getIDList()
+    polyIDList = config.cli.poly.getIDList()
+    targetIDList = []
+    for x in polyIDList:
+        elementType = config.cli.poly.getType(x)
+        if elementType == "TARGET":
+            targetIDList += [x]
+    randomInts = randint(0, len(targetIDList), 3)
+    randomTargetIDs = [targetIDList[x] for x in randomInts]
+    for x, y in zip(persIDList, randomTargetIDs):
+        if x != persIDList[-1]:
+            config.cli.pers.setTargetList(x, y)
+            config.cli.pers.setNextTargetListIndex(x, 0)
+        else:
+            config.cli.pers.setTargetList(x, '6')
+            config.cli.pers.setNextTargetListIndex(x, 0)
 
 def get_initial_states_random_on_grid(number_trials: int,
                                       initial_state_runners: List,

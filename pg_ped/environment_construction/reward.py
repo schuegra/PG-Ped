@@ -1,8 +1,8 @@
 import numpy
 from scipy.stats import truncnorm
-
 from torch import Tensor
 
+from pg_ped import config
 from pg_ped.environment_construction.termination import *
 from pg_ped.utils import *
 from pg_ped.environment_construction.geometry import *
@@ -391,17 +391,55 @@ def reward4(state: Tensor,
         # if dist < 0.8:
         #     scalar_reward += 10.
         #scalar_reward -= dist
-        # # Goal reward
-        if agent_in_goal(state,
-                         agent_identity=runner_identities[0],
-                         goal_line=goal_line,
-                         runner_identities=runner_identities,
-                         person_radius=person_radius) is True:
-            scalar_reward += 100.
-        else:
-            scalar_reward -= 1.  # 0.
 
+        # Runner gets to goal
+        # if agent_in_goal(state,
+        #                  agent_identity=runner_identities[0],
+        #                  goal_line=goal_line,
+        #                  runner_identities=runner_identities,
+        #                  person_radius=person_radius) is True:
+        #     scalar_reward += 100.
+        # else:
+        #     scalar_reward -= 0.
 
+        # Maximise distance to other waiting (2 waiting)
+        pers_id_list = list(config.cli.pers.getIDList())
+        runner_id = pers_id_list[-1]
+        pers_id_list = pers_id_list[:-1]
+        my_id = pers_id_list[agent_identity - 1]
+        my_pos = config.cli.pers.getPosition2D(my_id)
+        pers_id_list.remove(my_id)
+        other_id = pers_id_list[0]
+        other_pos = config.cli.pers.getPosition2D(other_id)
+        sos = (other_pos[0] - my_pos[0]) ** 2 + (other_pos[1] - my_pos[1]) ** 2
+        dist = sos ** 0.5
+        if dist >= 0.8:
+            scalar_reward += 1.
+
+        # # Try to get to target
+        # pers_id_list = list(config.cli.pers.getIDList())
+        # runner_id = pers_id_list[-1]
+        # pers_id_list = pers_id_list[:-1]
+        # my_id = pers_id_list[agent_identity - 1]
+        # my_pos = config.cli.pers.getPosition2D(my_id)
+        # my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        # my_target_dist = config.cli.poly.getDistance(my_target_id, my_pos[0], my_pos[1])
+        # scalar_reward -= my_target_dist
+
+        # # Choose closer target
+        # pers_id_list = list(config.cli.pers.getIDList())
+        # runner_id = pers_id_list[-1]
+        # pers_id_list = pers_id_list[:-1]
+        # my_id = pers_id_list[agent_identity - 1]
+        # my_pos = config.cli.pers.getPosition2D(my_id)
+        # if my_pos[0] > 1.5:
+        #     my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        #     if my_target_id == "8":
+        #         scalar_reward += 1.
+        # else:
+        #     my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        #     if my_target_id == "7":
+        #         scalar_reward += 1.
 
     return scalar_reward
 

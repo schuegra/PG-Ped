@@ -364,7 +364,19 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
                 one_is_done = True
 
         if one_is_done is False:
+            # Make step
             config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
+
+            # Update positions
+            positions_dict = config.cli.pers.getPosition2DList()
+            positions_in_order_of_vadere = list(positions_dict.values())
+            position_runner = [positions_in_order_of_vadere[-1]]
+            positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
+            positions = position_runner + positions_other
+            state = update_state_all_positions(state, positions, **kwargs)
+            for step in self._single_agent_steps:
+                step._environment._state = state
+
 
         if (self._training is True) and (one_is_done is True) and (failed is False):
             self.optimize(**kwargs)

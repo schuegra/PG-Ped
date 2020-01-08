@@ -22,9 +22,9 @@ def save_hyperparams_yaml(hyperparams: Dict[str, object], fn: str):
 
 def load_models(agents, number_runners, model_path, model_name):
     for agent in agents[:number_runners]:
-        agent.load_model(os.path.join(model_path, model_name + '_iter_50_runner.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_runner.pt'))
     for agent in agents[number_runners:]:
-        agent.load_model(os.path.join(model_path, model_name + '_iter_50_waiting.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_waiting.pt'))
 
 def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_agents, model_name):
     # Compensate for different episode lengths
