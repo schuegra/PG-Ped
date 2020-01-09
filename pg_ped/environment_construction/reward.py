@@ -3,6 +3,8 @@ from scipy.stats import truncnorm
 from torch import Tensor
 
 from pg_ped import config
+from pg_ped import traci_store
+from pg_ped.helpers import readPersonIDList
 from pg_ped.environment_construction.termination import *
 from pg_ped.utils import *
 from pg_ped.environment_construction.geometry import *
@@ -403,7 +405,7 @@ def reward4(state: Tensor,
         #     scalar_reward -= 0.
 
         # Maximise distance to other waiting (2 waiting)
-        pers_id_list = list(config.cli.pers.getIDList())
+        pers_id_list = readPersonIDList()
         runner_id = pers_id_list[-1]
         pers_id_list = pers_id_list[:-1]
         my_id = pers_id_list[agent_identity - 1]

@@ -20,11 +20,11 @@ def save_hyperparams_yaml(hyperparams: Dict[str, object], fn: str):
         yaml.dump(hyperparams, hyperparamfile, default_flow_style=False)
 
 
-def load_models(agents, number_runners, model_path, model_name):
+def load_models(agents, number_runners, model_path, model_name, iter):
     for agent in agents[:number_runners]:
-        agent.load_model(os.path.join(model_path, model_name + '_iter_200_runner.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_iter_' + str(iter) + '_runner.pt'))
     for agent in agents[number_runners:]:
-        agent.load_model(os.path.join(model_path, model_name + '_iter_200_waiting.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_iter_' + str(iter) + '_waiting.pt'))
 
 def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_agents, model_name):
     # Compensate for different episode lengths
@@ -85,3 +85,23 @@ def readScenario(scenPath):
     with open(scenPath, 'r') as scenFile:
         scenario = scenFile.read()
     return scenario
+
+def readTargetIDs():
+    if not traci_store.target_ids:
+        poly_ids = config.cli.poly.getIDList()
+        target_ids = []
+        for id in poly_ids:
+            targetType = config.cli.poly.getType(id)
+            if targetType == "TARGET":
+                target_ids += [id]
+        target_ids = [x for x in target_ids if x != "6"]  # "6" is assumed to be the target of the runner
+        traci_store.target_ids = target_ids
+        return target_ids
+    else:
+        return traci_store.target_ids
+
+
+def readPersonIDList():
+    if not traci_store.pers_id_list:
+        traci_store.pers_id_list = list(config.cli.pers.getIDList())
+        return traci_store.pers_id_list

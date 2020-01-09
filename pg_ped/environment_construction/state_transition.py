@@ -6,6 +6,8 @@ import torch
 from torch import Tensor
 
 from pg_ped import config
+from pg_ped import traci_store
+from pg_ped.helpers import readTargetIDs
 from pg_ped.environment_construction.geometry import *
 
 from pg_ped.utils import break_if_nan
@@ -41,13 +43,7 @@ def choose_target(state: Tensor,
         if agent_identity > 0:
 
             person_id = str(agent_identity)
-            poly_ids = config.cli.poly.getIDList()
-            target_ids = []
-            for id in poly_ids:
-                targetType = config.cli.poly.getType(id)
-                if targetType == "TARGET":
-                    target_ids += [id]
-            target_ids = [x for x in target_ids if x != "6"] # "6" is assumed to be the target of the runner
+            target_ids = readTargetIDs()
             target_index = action[0].cpu().numpy()
             target_id = str(target_ids[target_index])
             config.cli.pers.setNextTargetListIndex(person_id, 0)
