@@ -413,7 +413,7 @@ def reward4(state: Tensor,
         other_pos = config.cli.pers.getPosition2D(other_id)
         sos = (other_pos[0] - my_pos[0]) ** 2 + (other_pos[1] - my_pos[1]) ** 2
         dist = sos ** 0.5
-        if dist >= 0.8:
+        if dist >= 1.:
             scalar_reward += 1.
 
         # # Try to get to target

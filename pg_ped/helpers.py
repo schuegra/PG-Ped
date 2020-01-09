@@ -22,9 +22,9 @@ def save_hyperparams_yaml(hyperparams: Dict[str, object], fn: str):
 
 def load_models(agents, number_runners, model_path, model_name):
     for agent in agents[:number_runners]:
-        agent.load_model(os.path.join(model_path, model_name + '_runner.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_iter_200_runner.pt'))
     for agent in agents[number_runners:]:
-        agent.load_model(os.path.join(model_path, model_name + '_waiting.pt'))
+        agent.load_model(os.path.join(model_path, model_name + '_iter_200_waiting.pt'))
 
 def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_agents, model_name):
     # Compensate for different episode lengths
@@ -65,7 +65,10 @@ def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_age
     #axs[0].set_ylim(-0.01, 1.5)  # Avoid that loss explosion destroys scale
     axs[1].set_title('Episode Reward', size=12)
     axs[1].plot(numpy.array(reward_sums_smoothed).transpose())
-    plt.savefig(os.path.join('curves', 'loss_and_reward_curves_' + model_name + '.png'))
+    try:
+        plt.savefig(os.path.join('curves', 'loss_and_reward_curves_' + model_name + '.png'))
+    except Exception as e:
+        print(e)
     plt.close()
 
 def post_process(states: List[numpy.ndarray], episode_lengths: List[int], dt: float, trajectory_path: str, model_name: str):

@@ -93,6 +93,76 @@ class SingleAgentStep(object):
         self._agent.save_model(path, **kwargs)
 
 
+class SingleAgentStepVadereEventDrivenUpdate(SingleAgentStep):
+
+    def _mem(self, state, action, action_index, log_prob, prob):
+        self._state = state
+        self._action = action
+        self._action_index = action_index
+        self._log_prob = log_prob
+        self._prob = prob
+
+    def mem_next_state(self, next_state):
+        self._next_state = next_state
+
+    def mem_reward(self, reward):
+        self._reward = reward
+
+    def observe(self):
+        self._agent.observe(
+            self._state,
+            self._action,
+            self._action_index,
+            self._log_prob,
+            self._prob,
+            self._next_state,
+            self._reward,
+            None,
+            None
+        )
+
+    def __call__(self, **kwargs):
+        failed_action = False
+        if not self._done:
+            state = self._environment.state
+
+            action, action_index, log_prob, prob, failed_action = self._agent.action(state, [], **kwargs)
+
+            next_state, reward, failed = self._environment.step(action, self._agent.identity, **kwargs)
+            forbidden_actions = []
+            i = 0
+            while failed is True:
+
+                if (not -1 in forbidden_actions) and (
+                        len(forbidden_actions) == len(self._agent._action_space)):  # No action possible
+                    self._done = True
+                    print('NO ACTION POSSIBLE -> TERMINATE EPISODE')
+                    return state, self._done, False
+
+                forbidden_actions += [action_index.detach().cpu().numpy()]  # ; print(forbidden_actions)
+                action, action_index, log_prob, prob, _ = self._agent.action(state, forbidden_actions,
+                                                                             **kwargs)
+                next_state, reward, failed = self._environment.step(action, self._agent.identity, **kwargs)
+                i += 1
+
+            try:
+                action_to_pass = action.clone()  # .cpu()
+            except Exception:
+                action_to_pass = deepcopy(action)
+            self._mem(
+                state.detach().cpu().numpy(),
+                action_to_pass,
+                action_index.detach().cpu().numpy(),
+                log_prob.clone(),
+                prob.clone(),
+            )
+            self._steps += 1
+
+        if self._done is False:
+            self._done = self._environment.done(agent_identity=self._agent.identity, **kwargs)
+
+        return self._environment.state, self._done, False
+
 class SingleAgentStep1Step(SingleAgentStep):
 
     def __call__(self, **kwargs):
@@ -354,6 +424,10 @@ class MultiAgentStepSequentialEpisodic(MultiAgentStepBase):
 
 class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
 
+    def __init__(self, agents: List[Agent], environment: Environment, training: bool = True) -> None:
+        self._single_agent_steps = [SingleAgentStepVadereEventDrivenUpdate(agent, environment) for agent in agents]
+        self._training = training
+
     def __call__(self, **kwargs):
         one_is_done = False
         failed = False
@@ -363,19 +437,23 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             if done is True:
                 one_is_done = True
 
-        if one_is_done is False:
-            # Make step
-            config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
+        # Make step
+        config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
 
-            # Update positions
-            positions_dict = config.cli.pers.getPosition2DList()
-            positions_in_order_of_vadere = list(positions_dict.values())
-            position_runner = [positions_in_order_of_vadere[-1]]
-            positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
-            positions = position_runner + positions_other
-            state = update_state_all_positions(state, positions, **kwargs)
-            for step in self._single_agent_steps:
-                step._environment._state = state
+        # Evaluate Reward function
+        self._eval_reward_functions(**kwargs)
+
+        # Update positions
+        positions_dict = config.cli.pers.getPosition2DList()
+        positions_in_order_of_vadere = list(positions_dict.values())
+        position_runner = [positions_in_order_of_vadere[-1]]
+        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
+        positions = position_runner + positions_other
+        state = update_state_all_positions(state, positions, **kwargs)
+        for step in self._single_agent_steps:
+            step._environment._state = state
+            step.mem_next_state(state.detach().cpu().numpy())
+            step.observe()
 
 
         if (self._training is True) and (one_is_done is True) and (failed is False):
@@ -386,6 +464,12 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
 
         return state, one_is_done, failed
 
+
+    def _eval_reward_functions(self, **kwargs):
+        for step in self._single_agent_steps:
+            kwargs['initial_state'] = step._environment._initial_state
+            r = step._environment._reward_function(step._state, step._agent.identity, **kwargs)
+            step.mem_reward(r)
 
 class MultiAgentStepSequentialEpisodicNStepTD(MultiAgentStepSequentialEpisodic):
 
