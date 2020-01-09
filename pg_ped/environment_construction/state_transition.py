@@ -41,7 +41,6 @@ def choose_target(state: Tensor,
     try:
         # Set target
         if agent_identity > 0:
-
             person_id = str(agent_identity)
             target_ids = readTargetIDs()
             target_index = action[0].cpu().numpy()

@@ -7,6 +7,7 @@ from copy import deepcopy
 import numpy
 import matplotlib.pyplot as plt
 
+from pg_ped import traci_store, config
 from pg_ped.visualization.plot_trajectories import plot_trajectories
 from pg_ped.evaluation.evaluate_trajectories import extract_trajectories, save_trajectories
 
@@ -94,14 +95,17 @@ def readTargetIDs():
             targetType = config.cli.poly.getType(id)
             if targetType == "TARGET":
                 target_ids += [id]
-        target_ids = [x for x in target_ids if x != "6"]  # "6" is assumed to be the target of the runner
-        traci_store.target_ids = target_ids
-        return target_ids
-    else:
-        return traci_store.target_ids
+        traci_store.target_ids = [x for x in target_ids if x != "6"]  # "6" is assumed to be the target of the runner
+    return traci_store.target_ids
 
 
 def readPersonIDList():
     if not traci_store.pers_id_list:
         traci_store.pers_id_list = list(config.cli.pers.getIDList())
-        return traci_store.pers_id_list
+    return traci_store.pers_id_list
+
+
+def readTopographyBounds():
+    if not traci_store.topography_bounds:
+        traci_store.topography_bounds = config.cli.poly.getTopographyBounds()
+    return traci_store.topography_bounds

@@ -1,11 +1,113 @@
 from math import pi
 
 import torch
+from pg_ped import config
+from pg_ped.environment_construction.geometry import angle_2D_full
+from pg_ped.helpers import readTopographyBounds, readPersonIDList, readTargetIDs
+from pg_ped.marl.utils import *
 from torch import Tensor
 
-from pg_ped import config
-from pg_ped.marl.utils import *
-from pg_ped.environment_construction.geometry import angle_2D_full
+
+def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
+    # Agent features
+
+    # Agent's position
+    positions = state[0][:, :2].clone()
+
+    pos = positions[agent_identity]
+    pos_cpu = pos.cpu().numpy()
+    pos_cpu = (float(pos_cpu[0]), float(pos_cpu[1]))
+    n_agents = positions.shape[0]
+
+    topography_bounds = readTopographyBounds()
+    x_min = float(topography_bounds[0])
+    y_min = float(topography_bounds[1])
+    height = float(topography_bounds[2])
+    width = float(topography_bounds[3])
+    positions[:, 0] -= x_min
+    positions[:, 0] /= width
+    positions[:, 1] -= y_min
+    positions[:, 1] /= height
+
+    ## Agent's velocity
+    max_speed = config.cli.pers.getMaximumSpeed("1")
+    persIDList = readPersonIDList()
+    velocities = [config.cli.pers.getVelocity(persIDList[-1])]
+    for x in persIDList[:-1]:
+        velocities += [config.cli.pers.getVelocity(x)]
+    velocity = velocities[agent_identity]
+
+    ## Agent's free flow speed todo move to traci_store
+    persIDList = readPersonIDList()
+    freeFlowSpeeds = [config.cli.pers.getFreeFlowSpeed(persIDList[-1])]
+    for x in persIDList[:-1]:
+        freeFlowSpeeds += [config.cli.pers.getFreeFlowSpeed(x)]
+    freeFlowSpeed = freeFlowSpeeds[agent_identity]
+
+    ## Agents's target position
+    agentTargets = [config.cli.pers.getTargetList(persIDList[-1])[0]]
+    for x in persIDList[:-1]:
+        agentTargets += [config.cli.pers.getTargetList(x)[0]]
+    agentTargetPositions = []
+    for x in agentTargets:
+        targetPos = list(config.cli.poly.getCentroid(x))
+        targetPos[0] -= x_min
+        targetPos[0] /= width
+        targetPos[1] -= y_min
+        targetPos[1] /= height
+        agentTargetPositions += [targetPos]
+    agentTargetPos = agentTargetPositions[agent_identity]
+
+    # Target features
+    idList = config.cli.poly.getIDList()
+    targetDists = []
+    targetDirs = []
+    n_targets = 0
+    pos_x_axis = torch.tensor([1., 0.], device=device)
+    for x in idList:
+        elementType = config.cli.poly.getType(x)
+        if elementType == "TARGET":
+            n_targets += 1
+            targetDists += [config.cli.poly.getDistance(x, pos_cpu[0], pos_cpu[1])]
+            targetCentroid = config.cli.poly.getCentroid(x)
+            targetDirVec = (pos_cpu[0] - targetCentroid[0], pos_cpu[1] - targetCentroid[1])
+            targetDirVec = torch.tensor(targetDirVec, device=device)
+            targetDirs += [angle_2D_full(pos_x_axis, targetDirVec)]
+    targetIDs = readTargetIDs()
+    targetDists = torch.tensor(targetDists, device=device)
+    # targetDists -= targetDists.min()
+    # targetDists /= (targetDists.max() - targetDists.min())
+    targetDirs = torch.tensor(targetDirs, device=device)
+    # targetDirs = targetDirs / (2 * pi)
+
+    # state_representation = torch.zeros([5 * positions.shape[0] + 2 * n_targets], device=device)
+    # state_representation = torch.zeros([4 * positions.shape[0]], device=device)
+    state_representation = torch.zeros([4 * n_agents], device=device)
+
+    state_representation[0] = pos[0]
+    state_representation[1] = pos[1]
+    state_representation[2] = velocity[0] / max_speed
+    state_representation[3] = velocity[1] / max_speed
+    # state_representation[2] = freeFlowSpeed
+    # state_representation[3] = agentTargetPos[0]
+    # state_representation[4] = agentTargetPos[1]
+    for i in range(n_agents):
+        if i != agent_identity:
+            j = i + 1 if i < agent_identity else i
+            state_representation[j * 4 + 0] = positions[i, 0]
+            state_representation[j * 4 + 1] = positions[i, 1]
+            state_representation[j * 4 + 2] = velocities[i][0] / max_speed
+            state_representation[j * 4 + 3] = velocities[i][1] / max_speed
+            # state_representation[j * 5 + 0] = positions[i, 0]
+            # state_representation[j * 5 + 1] = positions[i, 1]
+    #         state_representation[j * 5 + 2] = freeFlowSpeeds[i]
+    #         state_representation[j * 5 + 3] = agentTargetPositions[i][0]
+    #         state_representation[j * 5 + 4] = agentTargetPositions[i][1]
+    # for i in range(n_targets):
+    #         state_representation[n_agents * 5 + i * 2 + 0] = targetDists[i]
+    #         state_representation[n_agents * 5 + i * 2 + 1] = targetDirs[i]
+
+    return state_representation
 
 
 def render_localization_map(state: Tensor, agent_identity: int,
@@ -1226,7 +1328,7 @@ def generate_kinematics_torch(state: Tensor,
     # Agent
     # S_ag = torch.norm(v)
     # angle_v_to_reference_line = angle_2D_full(v, shift_goal)
-    S_ag = torch.norm(v) # * torch.cos(angle_v_to_reference_line)
+    S_ag = torch.norm(v)  # * torch.cos(angle_v_to_reference_line)
     D_ag = torch.norm(shift_goal)
     A_v = angle_2D_full(direction, shift_goal)
     kinematics[0] = S_ag
@@ -1273,8 +1375,8 @@ def generate_kinematics_torch(state: Tensor,
 
     distances = torch.cat([d_x_min, d_x_max, d_y_min, d_y_max, d_start_line, d_goal_line])
     angles = torch.cat([a_x_min, a_x_max, a_y_min, a_y_max, a_start_line, a_goal_line])
-    #sorted_args = torch.argsort(distances)
-    #for i, id in enumerate(sorted_args):
+    # sorted_args = torch.argsort(distances)
+    # for i, id in enumerate(sorted_args):
     for i in range(6):
         kinematics[3 * n_agents + 2 * i] = distances[i] - soft_person_radius
         kinematics[3 * n_agents + 2 * i + 1] = angles[i]
@@ -1382,105 +1484,3 @@ def generate_kinematics_torch2(state: Tensor,
 
     break_if_nan(kinematics)
     return kinematics.unsqueeze(0)
-
-
-def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
-
-    # Agent features
-
-    # Agent's position
-    positions = state[0][:, :2].clone()
-
-    pos = positions[agent_identity]
-    pos_cpu = pos.cpu().numpy()
-    pos_cpu = (float(pos_cpu[0]), float(pos_cpu[1]))
-    n_agents = positions.shape[0]
-
-    topography_bounds = config.cli.poly.getTopographyBounds()
-    x_min = float(topography_bounds[0])
-    y_min = float(topography_bounds[1])
-    height = float(topography_bounds[2])
-    width = float(topography_bounds[3])
-    positions[:, 0] -= x_min
-    positions[:, 0] /= width
-    positions[:, 1] -= y_min
-    positions[:, 1] /= height
-
-    ## Agent's velocity
-    max_speed = config.cli.pers.getMaximumSpeed("1")
-    persIDList = config.cli.pers.getIDList()
-    velocities = [config.cli.pers.getVelocity(persIDList[-1])]
-    for x in persIDList[:-1]:
-        velocities += [config.cli.pers.getVelocity(x)]
-    velocity = velocities[agent_identity]
-
-    ## Agent's free flow speed
-    persIDList = config.cli.pers.getIDList()
-    freeFlowSpeeds = [config.cli.pers.getFreeFlowSpeed(persIDList[-1])]
-    for x in persIDList[:-1]:
-        freeFlowSpeeds += [config.cli.pers.getFreeFlowSpeed(x)]
-    freeFlowSpeed = freeFlowSpeeds[agent_identity]
-
-    ## Agents's target position
-    agentTargets = [config.cli.pers.getTargetList(persIDList[-1])[0]]
-    for x in persIDList[:-1]:
-        agentTargets += [config.cli.pers.getTargetList(x)[0]]
-    agentTargetPositions = []
-    for x in agentTargets:
-        targetPos = list(config.cli.poly.getCentroid(x))
-        # targetPos[0] -= 0.5
-        # targetPos[0] /= (2.5 - 0.5)
-        # targetPos[1] -= 0.5
-        # targetPos[1] /= (9.5 - 0.5)
-        agentTargetPositions += [targetPos]
-    agentTargetPos = agentTargetPositions[agent_identity]
-
-    # Target features
-    idList = config.cli.poly.getIDList()
-    targetDists = []
-    targetDirs = []
-    n_targets = 0
-    pos_x_axis = torch.tensor([1., 0.], device=device)
-    for x in idList:
-        elementType = config.cli.poly.getType(x)
-        if elementType == "TARGET":
-            n_targets += 1
-            targetDists += [config.cli.poly.getDistance(x, pos_cpu[0], pos_cpu[1])]
-            targetCentroid = config.cli.poly.getCentroid(x)
-            targetDirVec = (pos_cpu[0] - targetCentroid[0], pos_cpu[1] - targetCentroid[1])
-            targetDirVec = torch.tensor(targetDirVec, device=device)
-            targetDirs += [angle_2D_full(pos_x_axis, targetDirVec)]
-    targetDists = torch.tensor(targetDists, device=device)
-    # targetDists -= targetDists.min()
-    # targetDists /= (targetDists.max() - targetDists.min())
-    targetDirs = torch.tensor(targetDirs, device=device)
-    # targetDirs = targetDirs / (2 * pi)
-
-    # state_representation = torch.zeros([5 * positions.shape[0] + 2 * n_targets], device=device)
-    #state_representation = torch.zeros([4 * positions.shape[0]], device=device)
-    state_representation = torch.zeros([4 * n_agents], device=device)
-
-    state_representation[0] = pos[0]
-    state_representation[1] = pos[1]
-    state_representation[2] = velocity[0]/max_speed
-    state_representation[3] = velocity[1]/max_speed
-    # state_representation[2] = freeFlowSpeed
-    # state_representation[3] = agentTargetPos[0]
-    # state_representation[4] = agentTargetPos[1]
-    for i in range(n_agents):
-        if i != agent_identity:
-            j = i + 1 if i < agent_identity else i
-            state_representation[j * 4 + 0] = positions[i, 0]
-            state_representation[j * 4 + 1] = positions[i, 1]
-            state_representation[j * 4 + 2] = velocities[i][0]/max_speed
-            state_representation[j * 4 + 3] = velocities[i][1]/max_speed
-            # state_representation[j * 5 + 0] = positions[i, 0]
-            # state_representation[j * 5 + 1] = positions[i, 1]
-    #         state_representation[j * 5 + 2] = freeFlowSpeeds[i]
-    #         state_representation[j * 5 + 3] = agentTargetPositions[i][0]
-    #         state_representation[j * 5 + 4] = agentTargetPositions[i][1]
-    # for i in range(n_targets):
-    #         state_representation[n_agents * 5 + i * 2 + 0] = targetDists[i]
-    #         state_representation[n_agents * 5 + i * 2 + 1] = targetDirs[i]
-
-    return state_representation
