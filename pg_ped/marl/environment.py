@@ -21,7 +21,7 @@ class Environment(object):
         for crit in self._termination_criteria:
             if crit(self.state, **kwargs) is True:
                 self._done = True
-                print('Environment done: ', crit.__name__)
+                #print('Environment done: ', crit.__name__)
                 break
         return self._done
 

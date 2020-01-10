@@ -31,6 +31,8 @@ def start_simulation(episodes, parameter_dict, states, episode_lengths, model_na
 
         episode_lengths += [j]
 
+    print('******************************\n\tFINISH SIMULATION\n******************************\n')
+
 
 def evaluate_model(episodes, parameter_dict, states, episode_lengths, model_name):
     start_simulation(episodes, parameter_dict, states, episode_lengths, model_name)

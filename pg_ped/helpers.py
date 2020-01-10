@@ -12,7 +12,7 @@ from pg_ped.visualization.plot_trajectories import plot_trajectories
 from pg_ped.evaluation.evaluate_trajectories import extract_trajectories, save_trajectories
 
 
-def setup_experiment_directory(model_name, models_path, curves_path):
+def setup_experiment_directory(model_name, model_path, curves_path):
     if not os.path.exists(model_name):
         os.mkdir(model_name)
         if not os.path.exists(os.path.join(model_name, curves_path)):
