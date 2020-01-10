@@ -12,6 +12,15 @@ from pg_ped.visualization.plot_trajectories import plot_trajectories
 from pg_ped.evaluation.evaluate_trajectories import extract_trajectories, save_trajectories
 
 
+def setup_experiment_directory(model_name, models_path, curves_path):
+    if not os.path.exists(model_name):
+        os.mkdir(model_name)
+        if not os.path.exists(os.path.join(model_name, curves_path)):
+            os.mkdir(os.path.join(model_name, curves_path))
+        if not os.path.exists(os.path.join(model_name, model_path)):
+            os.mkdir(os.path.join(model_name, model_path))
+
+
 def create_fn(data: Dict[str, object]):
     return str(round(time.time()))
 
@@ -27,7 +36,7 @@ def load_models(agents, number_runners, model_path, model_name, iter):
     for agent in agents[number_runners:]:
         agent.load_model(os.path.join(model_path, model_name + '_iter_' + str(iter) + '_waiting.pt'))
 
-def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_agents, model_name):
+def plot_loss_and_reward_curves(curves_path, current_episode, losses, reward_sums, number_agents, model_name):
     # Compensate for different episode lengths
     losses_unitlength = []
     for a in range(number_agents):
@@ -67,7 +76,7 @@ def plot_loss_and_reward_curves(current_episode, losses, reward_sums, number_age
     axs[1].set_title('Episode Reward', size=12)
     axs[1].plot(numpy.array(reward_sums_smoothed).transpose())
     try:
-        plt.savefig(os.path.join('curves', 'loss_and_reward_curves_' + model_name + '.png'))
+        plt.savefig(os.path.join(curves_path, 'loss_and_reward_curves_' + model_name + '.png'))
     except Exception as e:
         print(e)
     plt.close()
