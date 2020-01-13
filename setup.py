@@ -1,9 +1,9 @@
-from distutils.core import setup
+from distutils.core import setup, find_packages
 
 setup(
     name='PGPed',
     version='0.1',
-    packages=['pg_ped'],
+    packages=find_packages(),
     url='',
     license='',
     author='Philipp Schuegraf',
