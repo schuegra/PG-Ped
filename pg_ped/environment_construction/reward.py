@@ -446,6 +446,97 @@ def reward4(state: Tensor,
     return scalar_reward
 
 
+def reward5(state: Tensor,
+            agent_identity: int,
+            influence_radius: float,
+            standard_deviation: float,
+            goal_line: float,
+            person_radius: float,
+            soft_person_radius: float,
+            runner_identities: List[int],
+            device: str,
+            initial_state: Tensor,
+            variables_per_agent_per_timestep: int,
+            backward_view: int,
+            start_line: float,
+            y_min: float,
+            y_max: float,
+            **kwargs) -> Tensor:
+    """
+        Reward function.
+
+        Parameters:
+        -----------
+
+        state: Tensor
+            A tensor of 2D cartesian coordinates.
+
+    """
+
+    scalar_reward = 0
+
+    p = state[agent_identity, :2]
+    p_old = state[agent_identity, 4:6]
+
+    if agent_identity in runner_identities:
+        scalar_reward += 0. # does not learn
+    else:
+        # targetPoint = torch.tensor([0.5, 8.0], device=device)
+        # dist = torch.norm(targetPoint - p).cpu().numpy()
+        # if dist < 0.8:
+        #     scalar_reward += 10.
+        #scalar_reward -= dist
+
+        # Runner gets to goal
+        # if agent_in_goal(state,
+        #                  agent_identity=runner_identities[0],
+        #                  goal_line=goal_line,
+        #                  runner_identities=runner_identities,
+        #                  person_radius=person_radius) is True:
+        #     scalar_reward += 100.
+        # else:
+        #     scalar_reward -= 0.
+
+        # Maximise distance to other waiting (2 waiting)
+        pers_id_list = readPersonIDList()
+        runner_id = pers_id_list[-1]
+        pers_id_list = pers_id_list[:-1]
+        my_id = pers_id_list[agent_identity - 1]
+        my_pos = config.cli.pers.getPosition2D(my_id)
+        pers_id_list.remove(my_id)
+        other_id = pers_id_list[0]
+        other_pos = config.cli.pers.getPosition2D(other_id)
+        sos = (other_pos[0] - my_pos[0]) ** 2 + (other_pos[1] - my_pos[1]) ** 2
+        dist = sos ** 0.5
+        if dist >= 1.:
+            scalar_reward += 1.
+
+        # Try to get to target
+        my_id = str(agent_identity)
+        my_pos = config.cli.pers.getPosition2D(my_id)
+        my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        my_target_dist = config.cli.poly.getDistance(my_target_id, my_pos[0], my_pos[1])
+        if my_target_dist <= 0.1:
+            scalar_reward += .5
+
+        # # Choose closer target
+        # pers_id_list = list(config.cli.pers.getIDList())
+        # runner_id = pers_id_list[-1]
+        # pers_id_list = pers_id_list[:-1]
+        # my_id = pers_id_list[agent_identity - 1]
+        # my_pos = config.cli.pers.getPosition2D(my_id)
+        # if my_pos[0] > 1.5:
+        #     my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        #     if my_target_id == "8":
+        #         scalar_reward += 1.
+        # else:
+        #     my_target_id = config.cli.pers.getTargetList(my_id)[0]
+        #     if my_target_id == "7":
+        #         scalar_reward += 1.
+
+    return scalar_reward
+
+
 def reward_simplified(state: Tensor,
                       agent_identity: int,
                       influence_radius: float,

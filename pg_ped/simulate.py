@@ -34,7 +34,8 @@ def start_simulation(episodes, parameter_dict, states, episode_lengths, model_na
     print('******************************\n\tFINISH SIMULATION\n******************************\n')
 
 
-def evaluate_model(episodes, parameter_dict, states, episode_lengths, model_name):
-    start_simulation(episodes, parameter_dict, states, episode_lengths, model_name)
-    reward_sums = flatten_list(parameter_dict['reward_sums'])
-    return numpy.mean(reward_sums)
+def evaluate_model(episodes, parameter_dict, states, episode_lengths, model_name, use_traci=False):
+    start_simulation(episodes, parameter_dict, states, episode_lengths, model_name, use_traci)
+    reward_sums = flatten_list(parameter_dict['reward_sums'][1])
+    total_steps = sum(parameter_dict['episode_lengths'])
+    return numpy.sum(reward_sums)/total_steps

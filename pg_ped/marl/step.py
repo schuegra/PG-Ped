@@ -9,6 +9,8 @@ import os
 from copy import deepcopy
 from random import shuffle
 from typing import List
+import multiprocessing
+from itertools import product
 
 import numpy
 import torch
@@ -162,6 +164,7 @@ class SingleAgentStepVadereEventDrivenUpdate(SingleAgentStep):
             self._done = self._environment.done(agent_identity=self._agent.identity, **kwargs)
 
         return self._environment.state, self._done, False
+
 
 class SingleAgentStep1Step(SingleAgentStep):
 
@@ -412,14 +415,17 @@ class MultiAgentStepSequentialEpisodic(MultiAgentStepBase):
         for i, sas in enumerate(self._single_agent_steps):
             sas.save_model(path, **kwargs)
 
-    def track_rewards(self, reward_sums: List[List[float]], **kwargs):
+    def track_rewards(self, reward_sums: List[List[float]], current_episode, **kwargs):
         '''
             Track reward of episode.
         '''
+        def sortByIdentity(single_agent_step):
+            return single_agent_step._agent.identity
+        self._single_agent_steps.sort(key=sortByIdentity)
         for i, sas in enumerate(self._single_agent_steps):
             transitions = sas._agent._replay_memory._memory[-sas.number_steps:]
             reward_sum = sum([x.reward for x in transitions])
-            reward_sums[i] += [reward_sum]
+            reward_sums[i][current_episode] += [reward_sum]
 
 
 class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
@@ -470,6 +476,51 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             kwargs['initial_state'] = step._environment._initial_state
             r = step._environment._reward_function(step._state, step._agent.identity, **kwargs)
             step.mem_reward(r)
+
+def loop_step(step, one_is_done, failed):
+    _, done, failed_step = step(**kwargs)
+    failed = failed or failed_step
+    if done is True:
+        one_is_done = True
+    return step, one_is_done, failed
+
+class MultiAgentStepVadereParallel(MultiAgentStepVadereSync):
+
+    def __call__(self, **kwargs):
+        one_is_done = [False for x in range(len(self._single_agent_steps))]
+        failed = [False for x in range(len(self._single_agent_steps))]
+
+        pool = multiprocessing.Pool(2)
+        # step, state, one_is_done, failed = #
+        with multiprocessing.Pool(processes=2) as pool:
+            results = pool.starmap(loop_step, product(self._single_agent_steps, one_is_done, failed))
+        # Make step
+        config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
+
+        # Evaluate Reward function
+        self._eval_reward_functions(**kwargs)
+
+        # Update positions
+        positions_dict = config.cli.pers.getPosition2DList()
+        positions_in_order_of_vadere = list(positions_dict.values())
+        position_runner = [positions_in_order_of_vadere[-1]]
+        positions_other = [pos for pos in positions_in_order_of_vadere[:-1]]
+        positions = position_runner + positions_other
+        state = update_state_all_positions(state, positions, **kwargs)
+        for step in self._single_agent_steps:
+            step._environment._state = state
+            step.mem_next_state(state.detach().cpu().numpy())
+            step.observe()
+
+
+        if (self._training is True) and (one_is_done is True) and (failed is False):
+            self.optimize(**kwargs)
+
+        if (one_is_done is True) and (self._training is False):
+            self.track_rewards(**kwargs)
+
+        return state, one_is_done, failed
+
 
 class MultiAgentStepSequentialEpisodicNStepTD(MultiAgentStepSequentialEpisodic):
 
