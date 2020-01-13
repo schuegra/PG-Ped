@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from pg_ped import config
+from pg_ped.helpers import readPersonIDList
 
 
 def standardize_tensor_nn(tensor: Tensor) -> Tensor:
@@ -124,7 +125,7 @@ def accumulated_density(start: Tensor, goal: Tensor,
 
 def set_state_vadere(state):
 
-    ids = config.cli.pers.getIDList()
+    ids = readPersonIDList()
     runner_id = ids[-1]
     runner_pos = state[0, :2].cpu().numpy()
     x = runner_pos[0]
