@@ -24,9 +24,10 @@ def agent_in_goal(state: Tensor,
                   runner_identities: List[int],
                   goal_line: float,
                   person_radius: float,
+                  device: str,
                   **kwargs) -> bool:
     if agent_identity in runner_identities:
-        return check_agent_passed_goal_line(state, agent_identity, goal_line, person_radius)
+        return check_agent_passed_goal_line(state, agent_identity, goal_line, person_radius, device)
     else:
         return False
 
@@ -36,9 +37,10 @@ def runners_in_goal(state: Tensor,
                     runner_identities: List[int],
                     goal_line: float,
                     person_radius: float,
+                    device: str,
                     **kwargs) -> bool:
     terminate = True
     for runner_identity in runner_identities:
-        runner_passed_goal_line = check_agent_passed_goal_line(state, runner_identity, goal_line, person_radius)
+        runner_passed_goal_line = check_agent_passed_goal_line(state, runner_identity, goal_line, person_radius, device)
         terminate = terminate and runner_passed_goal_line
     return terminate

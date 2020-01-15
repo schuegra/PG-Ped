@@ -477,7 +477,7 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             r = step._environment._reward_function(step._state, step._agent.identity, **kwargs)
             step.mem_reward(r)
 
-def loop_step(step, one_is_done, failed):
+def loop_step(step, one_is_done, failed, kwargs):
     _, done, failed_step = step(**kwargs)
     failed = failed or failed_step
     if done is True:
@@ -489,11 +489,12 @@ class MultiAgentStepVadereParallel(MultiAgentStepVadereSync):
     def __call__(self, **kwargs):
         one_is_done = [False for x in range(len(self._single_agent_steps))]
         failed = [False for x in range(len(self._single_agent_steps))]
+        kwargss = [kwargs for x in range(len(self._single_agent_steps))]
 
-        pool = multiprocessing.Pool(2)
+        pool = multiprocessing.Pool(3)
         # step, state, one_is_done, failed = #
         with multiprocessing.Pool(processes=2) as pool:
-            results = pool.starmap(loop_step, product(self._single_agent_steps, one_is_done, failed))
+            results = pool.starmap(loop_step, product(self._single_agent_steps, one_is_done, failed, kwargss))
         # Make step
         config.cli.ctr.nextStep(config.cli.sim.getSimTime() + kwargs['time_per_step'])
 

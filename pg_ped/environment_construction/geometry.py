@@ -19,11 +19,12 @@ def cut_goal_line(y, goal_line):
 def check_agent_passed_goal_line(state: Tensor,
                                  agent_identity: int,
                                  goal_line: float,
-                                 person_radius: float) -> bool:
+                                 person_radius: float,
+                                 device: str) -> bool:
     position = state[agent_identity, :2]
     y_position = position[1]
-    person_radius_t = torch.tensor(person_radius, device=state.device)
-    goal_line_t = torch.tensor(goal_line, device=state.device)
+    person_radius_t = torch.tensor(person_radius, device=device)
+    goal_line_t = torch.tensor(goal_line, device=device)
     agent_passed_goal_line = bool((y_position + person_radius_t >= goal_line_t))
     del person_radius_t, goal_line_t
     return agent_passed_goal_line
