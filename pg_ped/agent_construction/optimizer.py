@@ -74,7 +74,7 @@ def optimize(policy: nn.Module,
              device: str,
              episode_lengths: List[int],
              **kwargs) -> None:
-    reward_sums[agent_identity][current_episode].append(sum(rewards)) # / len(rewards))
+    reward_sums[agent_identity][current_episode].append(sum(rewards) / len(rewards))
 
     discounted_rewards = episode_discounted_rewards(rewards, discount_factor)
     # discounted_rewards = numpy.array(rewards).sum()

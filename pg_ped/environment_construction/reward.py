@@ -602,6 +602,7 @@ def reward7(state: Tensor,
             start_line: float,
             y_min: float,
             y_max: float,
+            reward_params: dict,
             **kwargs) -> Tensor:
     """
         Reward function.
@@ -622,11 +623,76 @@ def reward7(state: Tensor,
     if agent_identity in runner_identities:
         scalar_reward += 0. # does not learn
     else:
+        my_id = str(agent_identity)
+        my_pos = config.cli.pers.getPosition2D(my_id)
 
         runner_id = traci_store.pers_id_list[-1]
+        runner_pos = config.cli.pers.getPosition2D(runner_id)
+
+        dist = numpy.sqrt((my_pos[0] - runner_pos[0]) ** 2 + (my_pos[1] - runner_pos[1]) ** 2)
+
         runner_velocity = config.cli.pers.getVelocity(runner_id)
         runner_current_speed = numpy.sqrt(runner_velocity[0] ** 2 + runner_velocity[1] ** 2)
-        scalar_reward += runner_current_speed
+        runner_free_flow_speed = config.cli.pers.getFreeFlowSpeed(runner_id)
+
+        if dist < reward_params['influenceradius']: # radius of influence
+            if runner_current_speed < runner_free_flow_speed: # Do I block the runner?
+                scalar_reward -= (runner_free_flow_speed - runner_current_speed)
+
+    return scalar_reward
+
+
+def reward8(state: Tensor,
+            agent_identity: int,
+            influence_radius: float,
+            standard_deviation: float,
+            goal_line: float,
+            person_radius: float,
+            soft_person_radius: float,
+            runner_identities: List[int],
+            device: str,
+            initial_state: Tensor,
+            variables_per_agent_per_timestep: int,
+            backward_view: int,
+            start_line: float,
+            y_min: float,
+            y_max: float,
+            **kwargs) -> Tensor:
+    """
+        Reward function.
+
+        Parameters:
+        -----------
+
+        state: Tensor
+            A tensor of 2D cartesian coordinates.
+
+    """
+
+    scalar_reward = 0
+
+    p = state[agent_identity, :2]
+    p_old = state[agent_identity, 4:6]
+
+    if agent_identity in runner_identities:
+        scalar_reward += 0. # does not learn
+    else:
+        scalar_reward += 0. # todo design new reward function
+        # my_id = str(agent_identity)
+        # my_pos = config.cli.pers.getPosition2D(my_id)
+        #
+        # runner_id = traci_store.pers_id_list[-1]
+        # runner_pos = config.cli.pers.getPosition2D(runner_id)
+        #
+        # dist = numpy.sqrt((my_pos[0] - runner_pos[0]) ** 2 + (my_pos[1] - runner_pos[1]) ** 2)
+        #
+        # runner_velocity = config.cli.pers.getVelocity(runner_id)
+        # runner_current_speed = numpy.sqrt(runner_velocity[0] ** 2 + runner_velocity[1] ** 2)
+        # runner_free_flow_speed = config.cli.pers.getFreeFlowSpeed(runner_id)
+        #
+        # if dist < 2.0: # radius of influence
+        #     if runner_current_speed < runner_free_flow_speed: # Do I block the runner?
+        #         scalar_reward -= 1.0
 
     return scalar_reward
 
