@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 import gc
 
-from pg_ped.helpers import plot_loss_and_reward_curves, create_fn, save_hyperparams_yaml
+from pg_ped.helpers import plot_loss_and_reward_curves, plot_loss_and_reward_curves_averaged_over_agents, create_fn, save_hyperparams_yaml
 from pg_ped.utils import set_state_vadere
 
 def start_training(episodes, parameter_dict, losses, reward_sums, episode_lengths, number_episodes, number_agents,
@@ -37,8 +37,9 @@ def start_training(episodes, parameter_dict, losses, reward_sums, episode_length
         if i > 0:
             if (i + 1) % 100 == 0:
                 episode.save_models(os.path.join(model_path, model_name + '_iter_' + str(i + 1)), **parameter_dict)
-            if (i + 1) % 20 == 0:
+            if (i + 1) % 50 == 0:
                 plot_loss_and_reward_curves(curves_path, i, losses, reward_sums, number_agents, model_name)
+                plot_loss_and_reward_curves_averaged_over_agents(curves_path, i, losses, reward_sums, number_agents, model_name)
 
 
     episode.save_models(os.path.join(model_path, model_name + '_iter_' + str(i + 1)), **parameter_dict)

@@ -1,19 +1,18 @@
-import pdb
-import os
 import gc
+import math
+import os
+import pdb
 from typing import Tuple, List
 
-import math
 import numpy
-from numpy.random import randint
-from scipy.spatial import distance_matrix as scipy_distance_matrix
 import torch
-from torch import Tensor
 import torch.nn as nn
-from torch.autograd import Variable
-
+from numpy.random import randint
 from pg_ped import config
 from pg_ped.helpers import readPersonIDList
+from scipy.spatial import distance_matrix as scipy_distance_matrix
+from torch import Tensor
+from torch.autograd import Variable
 
 
 def standardize_tensor_nn(tensor: Tensor) -> Tensor:
@@ -120,11 +119,10 @@ def accumulated_density(start: Tensor, goal: Tensor,
         densities = numpy.where(dists > influence_radius, 0, densities)
         accumulated_density += densities.sum()
 
-    return accumulated_density #/ts.shape[0]
+    return accumulated_density  # /ts.shape[0]
 
 
 def set_state_vadere(state):
-
     ids = readPersonIDList()
     runner_id = ids[-1]
     runner_pos = state[0, :2].cpu().numpy()
@@ -138,8 +136,8 @@ def set_state_vadere(state):
         y = pos[1]
         config.cli.pers.setPosition2D(id, x, y)
 
-def set_random_targets():
 
+def set_random_targets():
     persIDList = config.cli.pers.getIDList()
     polyIDList = config.cli.poly.getIDList()
     targetIDList = []
@@ -157,6 +155,7 @@ def set_random_targets():
             config.cli.pers.setTargetList(x, '6')
             config.cli.pers.setNextTargetListIndex(x, 0)
 
+
 def get_initial_states_random_on_grid(number_trials: int,
                                       initial_state_runners: List,
                                       x_min: float,
@@ -171,6 +170,34 @@ def get_initial_states_random_on_grid(number_trials: int,
     initial_states = []
     xs = torch.arange(x_min + person_radius, x_max - person_radius, 2 * person_radius)
     ys = torch.arange(y_min + 4 * person_radius, y_max - person_radius, 2 * person_radius)
+    _xs = xs.view(-1, 1).expand(xs.shape[0], ys.shape[0]).reshape(-1)
+    _ys = ys.repeat(xs.shape[0])
+    positions = torch.stack([_xs, _ys]).transpose(1, 0).numpy()
+    for i in range(number_trials):
+        sampled = numpy.random.choice(range(positions.shape[0]), number_agents - 1, replace=False)
+        angles = 2 * math.pi * numpy.random.rand(number_agents - 1)
+        initial_state = [initial_state_runner for initial_state_runner in initial_state_runners] + [
+            [positions[sampled[i]][0].copy(), positions[sampled[i]][1].copy(),
+             numpy.cos(angles[i]), numpy.sin(angles[i])] * backward_view for i in range(0, number_agents - 1)]
+        initial_state = torch.tensor(initial_state, device=device)
+        initial_states += [initial_state]
+    return initial_states
+
+
+def get_initial_states_random_on_grid_vadere(number_trials: int,
+                                             initial_state_runners: List,
+                                             x_min: float,
+                                             x_max: float,
+                                             y_min: float,
+                                             y_max: float,
+                                             person_radius: float,
+                                             number_agents: int,
+                                             backward_view: int,
+                                             device: str,
+                                             **kwargs) -> Tensor:
+    initial_states = []
+    xs = torch.arange(x_min + person_radius, x_max - person_radius, 2 * person_radius)
+    ys = torch.arange(y_min + person_radius, y_max - person_radius, 2 * person_radius)
     _xs = xs.view(-1, 1).expand(xs.shape[0], ys.shape[0]).reshape(-1)
     _ys = ys.repeat(xs.shape[0])
     positions = torch.stack([_xs, _ys]).transpose(1, 0).numpy()
@@ -270,7 +297,7 @@ def get_initial_states_random_with_random_velocity(number_trials: int,
 
             while check_overlap(initial_state, person_radius):
                 initial_state[-1] = \
-                get_random_state_fixed_waiting(x_min, x_max, y_min, y_max, person_radius, backward_view)[0]
+                    get_random_state_fixed_waiting(x_min, x_max, y_min, y_max, person_radius, backward_view)[0]
         initial_states += [torch.tensor(initial_state, device=device)]
 
     return initial_states
