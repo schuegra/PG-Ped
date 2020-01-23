@@ -1,4 +1,5 @@
 from math import pi
+from copy import deepcopy
 
 import torch
 from pg_ped import config
@@ -10,17 +11,27 @@ from torch import Tensor
 
 def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
 
+
+    persIds = deepcopy(readPersonIDList())
+    n_agents = len(persIds)
+    targetPositions = readTargetPositions() + [config.cli.poly.getCentroid("6")]
+    n_targets = len(targetPositions)
+
+    if agent_identity == 0:
+        return torch.rand([2 + 4 * n_agents + 2 * (n_targets - 1)], device=device)
+
     # Agent features
 
     # Agent's position
+    myId = str(agent_identity)
+    persIds.remove(myId)
+    topography_bounds = readTopographyBounds()
+
     positions = state[0][:, :2].clone()
 
-    pos = positions[agent_identity]
-    pos_cpu = pos.cpu().numpy()
-    pos_cpu = (float(pos_cpu[0]), float(pos_cpu[1]))
-    n_agents = positions.shape[0]
+    pos_cpu = config.cli.pers.getPosition2D(myId)
+    otherDists = [numpy.sqrt((x[0] - pos_cpu[0]) ** 2 + (x[1] - pos_cpu[1]) ** 2) for x in positions]
 
-    topography_bounds = readTopographyBounds()
     x_min = float(topography_bounds[0])
     y_min = float(topography_bounds[1])
     height = float(topography_bounds[2])
@@ -29,6 +40,11 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     positions[:, 0] /= width
     positions[:, 1] -= y_min
     positions[:, 1] /= height
+    pos_cpu = positions[agent_identity]
+    distances = [torch.norm(pos_cpu - x) for x in positions]
+    positions = positions.tolist()
+    positions = [x for _, x in sorted(zip(distances, positions))]
+    positions = positions[1:]
 
     ## Agent's velocity
     max_speed = config.cli.pers.getMaximumSpeed("1")
@@ -36,7 +52,9 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     velocities = [config.cli.pers.getVelocity(persIDList[-1])]
     for x in persIDList[:-1]:
         velocities += [config.cli.pers.getVelocity(x)]
-    velocity = velocities[agent_identity]
+    velocities = [x for _, x in sorted(zip(distances, velocities))]
+    velocities = velocities[1:]
+    velocity = velocities[0]
 
     # ## Agent's free flow speed todo move to traci_store
     # persIDList = readPersonIDList()
@@ -60,16 +78,29 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     # agentTargetPos = agentTargetPositions[agent_identity]
 
     # Target features
-    targetPositions = readTargetPositions() + [config.cli.poly.getCentroid("6")]
-    n_targets = len(targetPositions)
-    targetPositionsNormed = []
-    for x in targetPositions:
-        y = []
-        y += [x[0] - x_min]
-        y[0] = y[0] / width
-        y += [x[1] - y_min]
-        y[1] = y[1] / height
-        targetPositionsNormed += [y]
+    myTargetId = config.cli.pers.getTargetList(myId)
+    myTargetPos = config.cli.poly.getCentroid(myTargetId[0])
+    myTargetVector = torch.tensor([(myTargetPos[0] - pos_cpu[0] - x_min) / width, (myTargetPos[1] - pos_cpu[1] - y_min) / height], device=device)
+    targetDists = []
+    # targetDirs = []
+    # for x in targetPositions:
+    #     targetDists += [numpy.sqrt((x[0] - pos_cpu[0]) ** 2 + (x[1] - pos_cpu[1]) ** 2)]
+        # targetDirs += [angle_2D_full(myTargetVector, torch.tensor(x, device=device))/(2*pi)]
+    targetDists = [numpy.sqrt((x[0] - pos_cpu[0]) ** 2 + (x[1] - pos_cpu[1]) ** 2) for x in targetPositions]
+
+    # sort targets by distance
+    targetPositions = [x for _,x in sorted(zip(targetDists, targetPositions))]
+    targetDists = numpy.array(sorted(targetDists))
+    targetDists = (targetDists - targetDists.min()) / (targetDists.max() - targetDists.min())
+
+    # targetPositionsNormed = []
+    # for x in targetPositions:
+    #     y = []
+    #     y += [x[0] - x_min]
+    #     y[0] = y[0] / width
+    #     y += [x[1] - y_min]
+    #     y[1] = y[1] / height
+    #     targetPositionsNormed += [y]
     # idList = config.cli.poly.getIDList()
     # targetDists = []
     # targetDirs = []
@@ -93,34 +124,166 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
 
     # state_representation = torch.zeros([5 * positions.shape[0] + 2 * n_targets], device=device)
     # state_representation = torch.zeros([4 * positions.shape[0]], device=device)
-    state_representation = torch.zeros([4 * n_agents + 2 * n_targets], device=device)
+    state_representation = torch.zeros([2 + 4 * n_agents + 2 * (n_targets - 1)], device=device)
 
-    state_representation[0] = pos[0]
-    state_representation[1] = pos[1]
+    state_representation[0] = pos_cpu[0]
+    state_representation[1] = pos_cpu[1]
     state_representation[2] = velocity[0] / max_speed
     state_representation[3] = velocity[1] / max_speed
-    # state_representation[2] = freeFlowSpeed
-    # state_representation[3] = agentTargetPos[0]
-    # state_representation[4] = agentTargetPos[1]
-    for i in range(n_agents):
-        if i != agent_identity:
-            j = i + 1 if i < agent_identity else i
-            state_representation[j * 4 + 0] = positions[i, 0]
-            state_representation[j * 4 + 1] = positions[i, 1]
-            state_representation[j * 4 + 2] = velocities[i][0] / max_speed
-            state_representation[j * 4 + 3] = velocities[i][1] / max_speed
-            # state_representation[j * 5 + 0] = positions[i, 0]
-            # state_representation[j * 5 + 1] = positions[i, 1]
+    state_representation[4:6] = myTargetVector
+    for i in range(1, n_agents - 1):
+        # if i != agent_identity:
+        #     j = i + 1 if i < agent_identity else i
+        state_representation[2 + i * 4 + 0] = positions[i - 1][0]
+        state_representation[2 + i * 4 + 1] = positions[i - 1][1]
+        state_representation[2 + i * 4 + 2] = velocities[i - 1][0] / max_speed
+        state_representation[2 + i * 4 + 3] = velocities[i - 1][1] / max_speed
+        # state_representation[j * 5 + 0] = positions[i, 0]
+        # state_representation[j * 5 + 1] = positions[i, 1]
     #         state_representation[j * 5 + 2] = freeFlowSpeeds[i]
     #         state_representation[j * 5 + 3] = agentTargetPositions[i][0]
     #         state_representation[j * 5 + 4] = agentTargetPositions[i][1]
     for i in range(n_targets):
-        state_representation[n_agents * 4 + i * 2 + 0] = targetPositionsNormed[i][0]
-        state_representation[n_agents * 4 + i * 2 + 1] = targetPositionsNormed[i][1]
+        state_representation[n_agents * 4 + i * 2 + 0] = (targetPositions[i][0] - x_min) / width
+        state_representation[n_agents * 4 + i * 2 + 1] = (targetPositions[i][1] - y_min) / height
     #         state_representation[n_agents * 5 + i * 2 + 0] = targetDists[i]
     #         state_representation[n_agents * 5 + i * 2 + 1] = targetDirs[i]
 
     return state_representation
+
+
+# def generate_kinematics_traci(state: Tensor,
+#                               agent_identity: int,
+#                               x_min: float,
+#                               x_max: float,
+#                               y_min: float,
+#                               y_max: float,
+#                               goal_line: float,
+#                               runner_identities: List[int],
+#                               device: str,
+#                               soft_person_radius: float,
+#                               time_per_step: float,
+#                               start_line: float,
+#                               **kwargs):
+#     new_state = state.clone()
+#     del state
+#
+#     # Get started
+#     persIds = readPersonIDList()
+#     n_agents = len(persIds)
+#     runnerId = persIds[-1]
+#     runnerIndex = 0
+#     waitingIds = persIds[:-1]
+#     waitingIndices = [i for i in range(1, n_agents)]
+#     if not agent_identity in runner_identities:
+#         myId = str(agent_identity)
+#         otherIds = [runnerId] + waitingIds.remove(myId)
+#         otherIndices = [0] + [int(x) - 1 for x in otherIds]
+#     else:
+#         myId = runnerId
+#         otherIds = waitingIds
+#     targetIDs = readTargetIDs()
+#     targetPositions = readTargetPositions()
+#     topographyBounds = readTopographyBounds()
+#
+#     # Read from traci
+#     persPositions = torch.zeros([n_agents, 2], device=device)
+#     persVelocities = torch.zeros([n_agents, 2], device=device)
+#     persPositions[0] = config.cli.pers.getPosition(runnerId)
+#     persVelocities[0] = config.cli.pers.getVelocity(runnerId)
+#     for i in range(1, n_agents):
+#         persPositions[i] = torch.tensor(config.cli.pers.getPosition(waitingIds[i - 1]), device=device)
+#         persVelocities[i] = torch.tensor(config.cli.pers.getVelocity(waitingIds[i - 1]), device=device)
+#
+#     state_representation = torch.zeros([2 + ])
+#
+#
+#
+#     right_axis = torch.tensor([1., 0.], device=new_state.device)
+#     origin = torch.tensor([0., 0.], device=new_state.device)
+#
+#     # Initialization of kinematics
+#     n_agents = new_state.shape[0]
+#     ta
+#     kinematics = torch.zeros(n_agents * 4 + 6 * 2, device=device)  # self, others, walls
+#
+#     # Auxiliary
+#     p = new_state[agent_identity, :2]
+#     v = (p - new_state[agent_identity, 4:6])
+#     direction = torch.cat([new_state[agent_identity, 2:3], new_state[agent_identity, 3:4]])
+#     a = angle_2D_full(new_state[agent_identity, 2:4], right_axis)
+#     other_ids = []
+#     for id in range(n_agents):
+#         if id != agent_identity:
+#             other_ids += [id]
+#     p_agents = new_state[other_ids, :2]
+#     shifts_agents = p_agents - p
+#     v_agents = new_state[other_ids, :2] - new_state[other_ids, 4:6]
+#     a_agents = new_state[other_ids, 3]
+#     rel_v = v - v_agents
+#
+#     # Agent
+#     D_ag = torch.norm(p)
+#     A_ag = angle_2D_full(p, right_axis)
+#     S_ag = torch.norm(v)
+#     A_v = angle_2D_full(direction, right_axis)
+#     kinematics[0] = D_ag
+#     kinematics[1] = A_ag
+#     kinematics[2] = S_ag
+#     kinematics[3] = A_v
+#
+#     # Other agents
+#     dagis = torch.zeros(n_agents - 1)
+#     for i in range(len(other_ids)):
+#         D_ag_i = torch.norm(shifts_agents[i]) - 2 * soft_person_radius
+#         dagis[i] = D_ag_i
+#     sorted_args = torch.argsort(dagis)
+#
+#     for i, id in enumerate(sorted_args):
+#         D_ag_id = torch.norm(p_agents[id])
+#         A_ag_id = angle_2D_full(p_agents[id], right_axis)
+#         S_id = torch.norm(v_agents[id])
+#         A_id = angle_2D_full(v_agents[id], right_axis)
+#         kinematics[(i + 1) * 4] = D_ag_id
+#         kinematics[(i + 1) * 4 + 1] = A_ag_id
+#         kinematics[(i + 1) * 4 + 2] = S_id
+#         kinematics[(i + 1) * 4 + 3] = A_id
+#
+#     # Walls
+#     shift_x_min = torch.tensor([x_min - p[0], 0.], device=device)
+#     shift_x_max = torch.tensor([x_max - p[0], 0.], device=device)
+#     shift_y_min = torch.tensor([0., y_min - p[1]], device=device)
+#     shift_y_max = torch.tensor([0., y_max - p[1]], device=device)
+#     shift_goal_line = torch.tensor([0., goal_line - p[1]], device=device)
+#     shift_start_line = torch.tensor([0., start_line - p[1]], device=device)
+#     d_x_min = torch.norm(shift_x_min).unsqueeze(0)
+#     d_x_max = torch.norm(shift_x_max).unsqueeze(0)
+#     d_y_min = torch.norm(shift_y_min).unsqueeze(0)
+#     d_y_max = torch.norm(shift_y_max).unsqueeze(0)
+#     d_goal_line = torch.norm(shift_goal_line).unsqueeze(0)
+#     d_start_line = torch.norm(shift_start_line).unsqueeze(0)
+#     # d_x_min = torch.tensor([x_min - p[0]])
+#     # d_x_max = torch.tensor([x_max - p[0]])
+#     # d_y_min = torch.tensor([y_min - p[1]])
+#     # d_y_max = torch.tensor([y_max - p[1]])
+#     # d_goal_line = torch.tensor([goal_line - p[1]])
+#     # d_start_line = torch.tensor([start_line - p[1]])
+#     a_x_min = angle_2D_full(shift_x_min, right_axis).unsqueeze(0)
+#     a_x_max = angle_2D_full(shift_x_max, right_axis).unsqueeze(0)
+#     a_y_min = angle_2D_full(shift_y_min, right_axis).unsqueeze(0)
+#     a_y_max = angle_2D_full(shift_y_max, right_axis).unsqueeze(0)
+#     a_goal_line = angle_2D_full(shift_goal_line, right_axis).unsqueeze(0)
+#     a_start_line = angle_2D_full(shift_start_line, right_axis).unsqueeze(0)
+#
+#     distances = torch.cat([d_x_min, d_x_max, d_y_min, d_y_max, d_start_line, d_goal_line])
+#     angles = torch.cat([a_x_min, a_x_max, a_y_min, a_y_max, a_start_line, a_goal_line])
+#     sorted_args = torch.argsort(distances)
+#     for i, id in enumerate(sorted_args):
+#         kinematics[n_agents * 4 + 2 * i] = distances[id] - soft_person_radius
+#         kinematics[n_agents * 4 + 2 * i + 1] = angles[id]
+#
+#     break_if_nan(kinematics)
+#     return kinematics.unsqueeze(0)
 
 
 def render_localization_map(state: Tensor, agent_identity: int,
@@ -1413,6 +1576,129 @@ def generate_kinematics_torch2(state: Tensor,
                                **kwargs):
     new_state = state.clone()
     del state
+    right_axis = torch.tensor([1., 0.], device=new_state.device)
+    origin = torch.tensor([0., 0.], device=new_state.device)
+
+    # Initialization of kinematics
+    n_agents = new_state.shape[0]
+    kinematics = torch.zeros(n_agents * 4 + 6 * 2, device=device)  # self, others, walls
+
+    # Auxiliary
+    p = new_state[agent_identity, :2]
+    v = (p - new_state[agent_identity, 4:6])
+    direction = torch.cat([new_state[agent_identity, 2:3], new_state[agent_identity, 3:4]])
+    a = angle_2D_full(new_state[agent_identity, 2:4], right_axis)
+    other_ids = []
+    for id in range(n_agents):
+        if id != agent_identity:
+            other_ids += [id]
+    p_agents = new_state[other_ids, :2]
+    shifts_agents = p_agents - p
+    v_agents = new_state[other_ids, :2] - new_state[other_ids, 4:6]
+    a_agents = new_state[other_ids, 3]
+    rel_v = v - v_agents
+
+    # Agent
+    D_ag = torch.norm(p)
+    A_ag = angle_2D_full(p, right_axis)
+    S_ag = torch.norm(v)
+    A_v = angle_2D_full(direction, right_axis)
+    kinematics[0] = D_ag
+    kinematics[1] = A_ag
+    kinematics[2] = S_ag
+    kinematics[3] = A_v
+
+    # Other agents
+    dagis = torch.zeros(n_agents - 1)
+    for i in range(len(other_ids)):
+        D_ag_i = torch.norm(shifts_agents[i]) - 2 * soft_person_radius
+        dagis[i] = D_ag_i
+    sorted_args = torch.argsort(dagis)
+
+    for i, id in enumerate(sorted_args):
+        D_ag_id = torch.norm(p_agents[id])
+        A_ag_id = angle_2D_full(p_agents[id], right_axis)
+        S_id = torch.norm(v_agents[id])
+        A_id = angle_2D_full(v_agents[id], right_axis)
+        kinematics[(i + 1) * 4] = D_ag_id
+        kinematics[(i + 1) * 4 + 1] = A_ag_id
+        kinematics[(i + 1) * 4 + 2] = S_id
+        kinematics[(i + 1) * 4 + 3] = A_id
+
+    # Walls
+    shift_x_min = torch.tensor([x_min - p[0], 0.], device=device)
+    shift_x_max = torch.tensor([x_max - p[0], 0.], device=device)
+    shift_y_min = torch.tensor([0., y_min - p[1]], device=device)
+    shift_y_max = torch.tensor([0., y_max - p[1]], device=device)
+    shift_goal_line = torch.tensor([0., goal_line - p[1]], device=device)
+    shift_start_line = torch.tensor([0., start_line - p[1]], device=device)
+    d_x_min = torch.norm(shift_x_min).unsqueeze(0)
+    d_x_max = torch.norm(shift_x_max).unsqueeze(0)
+    d_y_min = torch.norm(shift_y_min).unsqueeze(0)
+    d_y_max = torch.norm(shift_y_max).unsqueeze(0)
+    d_goal_line = torch.norm(shift_goal_line).unsqueeze(0)
+    d_start_line = torch.norm(shift_start_line).unsqueeze(0)
+    # d_x_min = torch.tensor([x_min - p[0]])
+    # d_x_max = torch.tensor([x_max - p[0]])
+    # d_y_min = torch.tensor([y_min - p[1]])
+    # d_y_max = torch.tensor([y_max - p[1]])
+    # d_goal_line = torch.tensor([goal_line - p[1]])
+    # d_start_line = torch.tensor([start_line - p[1]])
+    a_x_min = angle_2D_full(shift_x_min, right_axis).unsqueeze(0)
+    a_x_max = angle_2D_full(shift_x_max, right_axis).unsqueeze(0)
+    a_y_min = angle_2D_full(shift_y_min, right_axis).unsqueeze(0)
+    a_y_max = angle_2D_full(shift_y_max, right_axis).unsqueeze(0)
+    a_goal_line = angle_2D_full(shift_goal_line, right_axis).unsqueeze(0)
+    a_start_line = angle_2D_full(shift_start_line, right_axis).unsqueeze(0)
+
+    distances = torch.cat([d_x_min, d_x_max, d_y_min, d_y_max, d_start_line, d_goal_line])
+    angles = torch.cat([a_x_min, a_x_max, a_y_min, a_y_max, a_start_line, a_goal_line])
+    sorted_args = torch.argsort(distances)
+    for i, id in enumerate(sorted_args):
+        kinematics[n_agents * 4 + 2 * i] = distances[id] - soft_person_radius
+        kinematics[n_agents * 4 + 2 * i + 1] = angles[id]
+
+    break_if_nan(kinematics)
+    return kinematics.unsqueeze(0)
+
+
+def generate_kinematics_traci(state: Tensor,
+                              agent_identity: int,
+                              x_min: float,
+                              x_max: float,
+                              y_min: float,
+                              y_max: float,
+                              goal_line: float,
+                              runner_identities: List[int],
+                              device: str,
+                              soft_person_radius: float,
+                              time_per_step: float,
+                              start_line: float,
+                              **kwargs):
+    new_state = state.clone()
+    del state
+
+    # Get started
+    persIds = readPersonIDList()
+    runnerId = persIds[-1]
+    waitingIds = persIds[:-1]
+    if not agent_identity in runner_identities:
+        myId = str(agent_identity)
+        otherIds = [runnerId] + waitingIds.remove(myId)
+    else:
+        myId = runnerId
+        otherIds = waitingIds
+    targetIDs = readTargetIDs()
+    targetPositions = readTargetPositions()
+    topographyBounds = readTopographyBounds()
+
+    # Positions
+    persPositions = torch.zeros([len(persIds)], device=device)
+    persPositions[0] = config.cli.pers.getPosition(myId)
+    for id in otherIds:
+        persPositions[int(id)]
+
+
     right_axis = torch.tensor([1., 0.], device=new_state.device)
     origin = torch.tensor([0., 0.], device=new_state.device)
 

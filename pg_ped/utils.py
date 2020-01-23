@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from numpy.random import randint
 from pg_ped import config
-from pg_ped.helpers import readPersonIDList
+from pg_ped.helpers import readPersonIDList, readTargetIDs
 from scipy.spatial import distance_matrix as scipy_distance_matrix
 from torch import Tensor
 from torch.autograd import Variable
@@ -138,18 +138,18 @@ def set_state_vadere(state):
 
 
 def set_random_targets():
-    persIDList = config.cli.pers.getIDList()
-    polyIDList = config.cli.poly.getIDList()
+    persIDList = readPersonIDList()
+    polyIDList = readTargetIDs()
     targetIDList = []
     for x in polyIDList:
         elementType = config.cli.poly.getType(x)
         if elementType == "TARGET":
             targetIDList += [x]
-    randomInts = randint(0, len(targetIDList), 3)
+    randomInts = randint(0, len(targetIDList), len(persIDList))
     randomTargetIDs = [targetIDList[x] for x in randomInts]
     for x, y in zip(persIDList, randomTargetIDs):
         if x != persIDList[-1]:
-            config.cli.pers.setTargetList(x, y)
+            config.cli.pers.setTargetList(x, [y])
             config.cli.pers.setNextTargetListIndex(x, 0)
         else:
             config.cli.pers.setTargetList(x, '6')

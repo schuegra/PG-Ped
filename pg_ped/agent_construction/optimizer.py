@@ -82,7 +82,7 @@ def optimize(policy: nn.Module,
     discounted_rewards.requires_grad = True
 
     # probs = torch.cat(probs).squeeze(1).detach()
-    log_probs = torch.cat(log_probs).squeeze(1)  # .to(device) # alternatively use sum
+    log_probs = torch.cat(log_probs).squeeze(1).to(device) # alternatively use sum
     loss = torch.mean(- log_probs * discounted_rewards)
 
     # loss.register_hook(print)
