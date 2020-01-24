@@ -27,7 +27,7 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     persIds.remove(myId)
     topography_bounds = readTopographyBounds()
 
-    positions = state[0][:, :2].clone()
+    positions = state[0][:, :2].clone().cpu()
 
     pos_cpu = config.cli.pers.getPosition2D(myId)
     otherDists = [numpy.sqrt((x[0] - pos_cpu[0]) ** 2 + (x[1] - pos_cpu[1]) ** 2) for x in positions]
