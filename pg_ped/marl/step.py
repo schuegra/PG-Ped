@@ -460,6 +460,8 @@ class MultiAgentStepVadereSync(MultiAgentStepSequentialEpisodic):
             step._environment._state = state
             step.mem_next_state(state.detach().cpu().numpy())
             step.observe()
+        config.cli.pers.setNextTargetListIndex("14", 0)
+        
 
 
         if (self._training is True) and (one_is_done is True) and (failed is False):

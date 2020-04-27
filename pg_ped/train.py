@@ -35,9 +35,9 @@ def start_training(episodes, parameter_dict, losses, reward_sums, episode_length
             print('****************EPISODES TRAINED ' + str(i + 1) + '****************\n')
 
         if i > 0:
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 20 == 0:
                 episode.save_models(os.path.join(model_path, model_name + '_iter_' + str(i + 1)), **parameter_dict)
-            if (i + 1) % 50 == 0:
+            if (i + 1) % 20 == 0:
                 plot_loss_and_reward_curves(curves_path, i, losses, reward_sums, number_agents, model_name)
                 plot_loss_and_reward_curves_averaged_over_agents(curves_path, i, losses, reward_sums, number_agents, model_name)
 

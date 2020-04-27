@@ -672,9 +672,6 @@ def reward8(state: Tensor,
 
     scalar_reward = 0
 
-    p = state[agent_identity, :2]
-    p_old = state[agent_identity, 4:6]
-
     if agent_identity in runner_identities:
         scalar_reward += 0. # does not learn
     else:
@@ -684,7 +681,7 @@ def reward8(state: Tensor,
         runner_id = traci_store.pers_id_list[-1]
         runner_pos = config.cli.pers.getPosition2D(runner_id)
 
-        if runner_pos[1] > 7.2:
+        if runner_pos[1] > 5.0:
             scalar_reward += 1.
 
         # dist_runner = numpy.sqrt((my_pos[0] - runner_pos[0]) ** 2 + (my_pos[1] - runner_pos[1]) ** 2)
