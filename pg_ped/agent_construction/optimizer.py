@@ -73,6 +73,8 @@ def optimize(policy: nn.Module,
              learning_rate_waiting_value: float,
              device: str,
              episode_lengths: List[int],
+             with_entropy: bool,
+             entropy_factor: float,
              **kwargs) -> None:
     reward_sums[agent_identity][current_episode].append(sum(rewards) / len(rewards))
 
@@ -87,8 +89,11 @@ def optimize(policy: nn.Module,
 
     # loss.register_hook(print)
     # log_probs.register_hook(print)
-    # entropies = Variable(torch.mean(- log_probs * probs), requires_grad=True)
-    # loss = loss - 0.1 * entropies
+
+    if with_entropy is True:
+        entropy = torch.mean(- log_probs * torch.tensor(probs, device=device)).detach()
+        entropy.requires_grad = True
+        loss = loss - entropy_factor * entropy
 
     losses[agent_identity][current_episode].append((loss).squeeze(0).detach().cpu().numpy())
 

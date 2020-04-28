@@ -12,9 +12,7 @@ from torchvision.models import vgg11, resnet18
 
 from pg_ped.utils import standardize_tensor, normalize_tensor, standardize_tensor_nn
 from pg_ped.visualization.visualize_cnn import vis_feature_maps, vis_fc, vis_fov
-
-
-
+from pg_ped.visualization.graph_visualization import make_dot
 
 
 class PolicyNetRecurrent(nn.Module):

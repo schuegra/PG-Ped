@@ -785,7 +785,7 @@ def reward10(state: Tensor,
         # scalar_reward += runner_current_speed
 
 
-        # Try to maximise distance to all other agents
+        # Try to maximise distance to closest other agent
         persIds = readPersonIDList()
         dists = []
         my_id = str(agent_identity)

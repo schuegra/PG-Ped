@@ -158,7 +158,7 @@ def generate_state(state: Tensor, agent_identity: int, device: str, **kwargs):
     #         state_representation[n_agents * 5 + i * 2 + 0] = targetDists[i]
     #         state_representation[n_agents * 5 + i * 2 + 1] = targetDirs[i]
 
-    return state_representation
+    return state_representation.clone()
 
 
 # def generate_kinematics_traci(state: Tensor,
